@@ -83,17 +83,17 @@ header{
 header.scrolled{background:var(--signal);box-shadow:0 4px 12px rgba(0,0,0,0.15);}
 .nav{display:flex;align-items:center;gap:1.5rem;height:72px}
 .brand{display:flex;flex-direction:column;gap:.18rem;text-decoration:none;margin-right:auto}
-.brand b{font:600 1.06rem var(--display);letter-spacing:.14em;color:#FFFFFF}
+.brand b{font:600 1.25rem var(--display);letter-spacing:.14em;color:#FFFFFF}
 .brand b i{font-style:normal;color:var(--saffron)}
-.brand span{font:600 .56rem var(--mono);letter-spacing:.3em;color:#E2E8F0}
+.brand span{font:600 .65rem var(--mono);letter-spacing:.3em;color:#E2E8F0}
 .nav-links{display:flex;align-items:center;gap:1.6rem;list-style:none;margin:0;padding:0}
 .nav-links a{
-  font:600 .7rem var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  font:600 .85rem var(--mono);letter-spacing:.14em;text-transform:uppercase;
   color:#E2E8F0;text-decoration:none;transition:color .2s;
 }
 .nav-links a:hover{color:#FFFFFF}
 .nav-cta{
-  font:600 .7rem var(--mono);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;
+  font:600 .85rem var(--mono);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;
   color:var(--void);background:var(--saffron);padding:.62rem .95rem;white-space:nowrap;
   transition:background .2s,transform .2s;
 }
