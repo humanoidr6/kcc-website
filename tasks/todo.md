@@ -16,9 +16,9 @@
 
 ## Phase 3: Content Updates
 - [x] Add Team/Leadership section between Research and Mission Log
-- [ ] Add Contact Details section
-- [ ] News/Updates Section
+- [x] Add Contact Details section
+- [x] News/Updates Section
 
 ## Verification
-- [ ] Verify Lighthouse scores after changes
-- [ ] Check responsive design on desktop/tablet/mobile
+- [x] Verify Lighthouse scores after changes
+- [x] Check responsive design on desktop/tablet/mobile

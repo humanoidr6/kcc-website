@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://humanoidr6.github.io/kcc-website/sitemap.xml
