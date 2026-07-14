@@ -28,7 +28,7 @@
 
 ## 4. Pending Tasks / Next Steps
 - [x] **News/Updates Section:** Build a dynamic or static news ticker/grid.
-- [ ] **Contact Form:** Implement a functional contact section with form validation.
-- [ ] **SEO Optimization:** Generate `sitemap.xml`, `robots.txt`, and audit with Google Lighthouse.
-- [ ] **Print Stylesheet:** Add `@media print` rules for PDF generation.
+- [x] **Contact Form:** Implement a functional contact section with form validation.
+- [x] **SEO Optimization:** Generate `sitemap.xml`, `robots.txt`, and audit with Google Lighthouse.
+- [x] **Print Stylesheet:** Add `@media print` rules for PDF generation.
 - [ ] **Deployment:** Map to a custom domain when ready.
