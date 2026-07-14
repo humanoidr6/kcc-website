@@ -85,7 +85,7 @@ header.scrolled{background:var(--signal);box-shadow:0 4px 12px rgba(0,0,0,0.15);
 .brand{display:flex;flex-direction:column;gap:.18rem;text-decoration:none;margin-right:auto}
 .brand b{font:600 1.25rem var(--display);letter-spacing:.14em;color:#FFFFFF}
 .brand b i{font-style:normal;color:var(--saffron)}
-.brand span{font:600 .65rem var(--mono);letter-spacing:.3em;color:#E2E8F0}
+.brand span{font:600 1rem var(--mono);letter-spacing:.15em;color:#E2E8F0}
 .nav-links{display:flex;align-items:center;gap:1.6rem;list-style:none;margin:0;padding:0}
 .nav-links a{
   font:600 .85rem var(--mono);letter-spacing:.14em;text-transform:uppercase;
