@@ -14,3 +14,6 @@
 - Always plan in `tasks/todo.md` before coding.
 - Test responsive layouts implicitly when designing UI components.
 - Check Lighthouse metrics periodically.
+- **PDF Image Extraction**: Raw JPEGs embedded in PDFs are often heavily compressed. To get crisp images, either render the PDF page at 300+ DPI and crop it, or request the original high-res photos from the user.
+- **Content Integrity**: When migrating content from a PDF to HTML, always extract the raw text using a script and review it to ensure no tables, bullet points, or summary sections are missed.
+- **Image Layouts**: Don't squeeze high-resolution images into narrow grid columns next to text, as it makes them look artificially compressed. Allow them to span large widths.
