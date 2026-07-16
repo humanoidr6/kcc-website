@@ -32,3 +32,20 @@
 - [x] **SEO Optimization:** Generate `sitemap.xml`, `robots.txt`, and audit with Google Lighthouse.
 - [x] **Print Stylesheet:** Add `@media print` rules for PDF generation.
 - [ ] **Deployment:** Map to a custom domain when ready.
+
+---
+
+## Session Log — 16 Jul 2026 (Linux/Claude Code)
+
+- **Passes panel is now real**: `assets/js/passes.js` — vanilla SGP4 (WGS-72, near-Earth)
+  computing live pass predictions over Gharuan; CelesTrak GP fetch → 12 h localStorage
+  cache → bundled TLE fallback (works offline/file://). Verified against python-sgp4 and
+  Skyfield before shipping. New `#passes` section after News; on-brand console styling
+  replaced the orphaned `.passes-panel` placeholder CSS.
+- **Print fixed**: `.rv` scroll-reveal elements printed as blank pages; print block now
+  forces them visible.
+- **Meta hygiene**: CUSAT removed from meta/og descriptions; `color-scheme` meta now
+  `light` to match the CSS; og:image → optimized `assets/og.jpg` (1200×630).
+- **Images**: ~25 MB → ~2.4 MB (certificate + inaugural PNGs converted to JPG, refs updated).
+- **sitemap.xml**: now lists internship-report and internship-schedule pages.
+- **Known gap**: `respond-basket.html` (BalloonSat news card) still missing → 404.

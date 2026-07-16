@@ -1,3 +1,9 @@
+> **STATUS 2026-07-16:** this document describes the original dark single-file
+> "mission control" design, which was retired in the July 2026 overhaul (light
+> ISRO-blue theme, multi-file layout, real centre content — see `tasks/hand_off.md`
+> and `TODO.md`). Kept for history; the headless-Chrome **testing recipe** below is
+> still the way we verify renders.
+
 # Design system & build notes
 
 Reference for anyone (human or AI) continuing work on `index.html`. Read this before
