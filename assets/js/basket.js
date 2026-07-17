@@ -32,9 +32,10 @@
 
   function renderCards(){
     cardsEl.textContent = "";
-    data.groups.forEach(function(g){
+    data.groups.forEach(function(g, i){
       var count = (byPrefix[g.code] || []).length;
       var card = el("button", "wp-card");
+      card.style.setProperty("--d", (i * 0.035) + "s");
       card.type = "button";
       card.setAttribute("data-prefix", g.code);
       var code = el("span", "wp-card-code", g.code);
@@ -62,10 +63,11 @@
     panelTitleEl.textContent = group ? group.name : prefix;
     panelCountEl.textContent = items.length + (items.length === 1 ? " project" : " projects");
     listEl.textContent = "";
-    items.forEach(function(p){
+    items.forEach(function(p, i){
       var diff = difficultyParts(p.difficulty);
       var row = el("button", "wp-project-row");
       row.type = "button";
+      row.style.setProperty("--d", (i * 0.045) + "s");
       var code = el("span", "wp-project-code", p.code);
       var title = el("span", "wp-project-title", p.title);
       var level = el("span", "wp-project-level " + "lvl-" + diff.level.toLowerCase(), diff.level);
@@ -122,6 +124,9 @@
   function openProject(code){
     var p = byCode[code];
     if (!p) return;
+    // already open means this is a linkage cross-link: the overlay won't replay
+    // its entrance animation, so fade the swapped content in by hand
+    var wasOpen = !modalEl.hidden;
     var diff = difficultyParts(p.difficulty);
     modalBodyEl.textContent = "";
 
@@ -176,8 +181,16 @@
       modalBodyEl.appendChild(link);
     }
 
-    modalEl.hidden = false;
-    document.body.classList.add("modal-open");
+    if (wasOpen){
+      modalEl.scrollTop = 0;
+      modalBodyEl.classList.remove("swap-in");
+      void modalBodyEl.offsetWidth;   // reflow, so the animation restarts
+      modalBodyEl.classList.add("swap-in");
+    } else {
+      modalBodyEl.classList.remove("swap-in");
+      modalEl.hidden = false;
+      document.body.classList.add("modal-open");
+    }
     modalCloseBtn.focus();
   }
   function closeModal(){
