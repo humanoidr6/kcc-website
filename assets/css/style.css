@@ -686,32 +686,32 @@ footer .foot-links a:hover { color: #FFF; }
 .wp-card:hover, .wp-card:focus-visible { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,.06); border-color: var(--line-strong); }
 .wp-card:hover::before, .wp-card:focus-visible::before { transform: scaleY(1); }
 .wp-card-code {
-  font: 600 .68rem var(--mono); letter-spacing: .18em; color: var(--saffron); text-transform: uppercase;
+  font: 600 .76rem var(--mono); letter-spacing: .18em; color: var(--saffron); text-transform: uppercase;
 }
-.wp-card-count { font: 600 .68rem var(--mono); letter-spacing: .1em; color: var(--faint); text-transform: uppercase; }
-.wp-card h3 { font-size: 1.12rem; line-height: 1.3; margin: .2rem 0 0; }
-.wp-card p { color: var(--muted); font-size: .9rem; line-height: 1.55; margin: 0; }
+.wp-card-count { font: 600 .76rem var(--mono); letter-spacing: .1em; color: var(--faint); text-transform: uppercase; }
+.wp-card h3 { font-size: 1.28rem; line-height: 1.3; margin: .2rem 0 0; }
+.wp-card p { color: var(--muted); font-size: 1.02rem; line-height: 1.6; margin: 0; }
 
 .wp-panel { background: var(--void); border: 1px solid var(--line-strong); padding: clamp(1.5rem, 4vw, 2.5rem); }
 .wp-back {
   background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 1.25rem;
-  font: 600 .72rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--signal);
+  font: 600 .8rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--signal);
 }
 .wp-back:hover { color: var(--saffron); }
 .wp-panel-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem 1.25rem; margin-bottom: 1.5rem; }
-.wp-panel-head h3 { font-size: 1.4rem; margin: 0; }
-#wp-panel-count { font: 600 .68rem var(--mono); letter-spacing: .14em; color: var(--faint); text-transform: uppercase; }
+.wp-panel-head h3 { font-size: 1.6rem; margin: 0; }
+#wp-panel-count { font: 600 .76rem var(--mono); letter-spacing: .14em; color: var(--faint); text-transform: uppercase; }
 .wp-project-list { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
 .wp-project-row {
-  display: grid; grid-template-columns: 9rem 1fr auto; gap: 1rem; align-items: center;
+  display: grid; grid-template-columns: 10.5rem 1fr auto; gap: 1rem; align-items: center;
   background: var(--void); border: none; padding: 1rem 1.25rem; text-align: left; cursor: pointer;
   font-family: inherit; transition: background .15s;
 }
 .wp-project-row:hover, .wp-project-row:focus-visible { background: var(--panel); }
-.wp-project-code { font: 600 .72rem var(--mono); letter-spacing: .06em; color: var(--saffron); }
-.wp-project-title { color: var(--ink); font-size: .95rem; }
+.wp-project-code { font: 600 .82rem var(--mono); letter-spacing: .06em; color: var(--saffron); }
+.wp-project-title { color: var(--ink); font-size: 1.08rem; }
 .wp-project-level {
-  font: 600 .62rem var(--mono); letter-spacing: .12em; text-transform: uppercase; padding: .3rem .6rem;
+  font: 600 .7rem var(--mono); letter-spacing: .12em; text-transform: uppercase; padding: .32rem .65rem;
   border: 1px solid var(--line-strong); color: var(--muted); white-space: nowrap; justify-self: end;
 }
 .wp-project-level.lvl-beginner { color: var(--signal); border-color: var(--signal); }
@@ -736,21 +736,21 @@ body.modal-open { overflow: hidden; }
 }
 .modal-close:hover { border-color: var(--saffron); color: var(--saffron); }
 .modal-eyebrow {
-  font: 600 .68rem var(--mono); letter-spacing: .18em; color: var(--saffron); text-transform: uppercase; margin: 0 0 .5rem;
+  font: 600 .76rem var(--mono); letter-spacing: .18em; color: var(--saffron); text-transform: uppercase; margin: 0 0 .5rem;
 }
-.modal-title { font-size: 1.6rem; margin: 0 0 .35rem; max-width: 88%; }
-.modal-code { font: 600 .78rem var(--mono); letter-spacing: .08em; color: var(--faint); margin: 0 0 1.5rem; }
+.modal-title { font-size: 1.85rem; margin: 0 0 .35rem; max-width: 88%; }
+.modal-code { font: 600 .88rem var(--mono); letter-spacing: .08em; color: var(--faint); margin: 0 0 1.5rem; }
 .modal-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--line); }
 .modal-field { margin-bottom: 1.5rem; }
 .modal-field:last-child { margin-bottom: 0; }
 .modal-field h4 {
-  font: 600 .64rem var(--mono); letter-spacing: .16em; color: var(--faint); text-transform: uppercase; margin: 0 0 .5rem;
+  font: 600 .72rem var(--mono); letter-spacing: .16em; color: var(--faint); text-transform: uppercase; margin: 0 0 .55rem;
 }
-.modal-field p { color: var(--ink); font-size: .95rem; line-height: 1.65; margin: 0; }
-.modal-list { margin: 0; padding-left: 1.1rem; color: var(--ink); font-size: .95rem; line-height: 1.7; }
+.modal-field p { color: var(--ink); font-size: 1.08rem; line-height: 1.7; margin: 0; }
+.modal-list { margin: 0; padding-left: 1.1rem; color: var(--ink); font-size: 1.08rem; line-height: 1.75; }
 .modal-linkages { display: block; }
 .wp-linkage-code {
-  font: 600 .82rem var(--mono); color: var(--signal); text-decoration: none; border-bottom: 1px solid rgba(111,216,232,.35);
+  font: 600 .92rem var(--mono); color: var(--signal); text-decoration: none; border-bottom: 1px solid rgba(111,216,232,.35);
 }
 .wp-linkage-code:hover { color: var(--saffron); border-color: rgba(245,166,43,.5); }
 .wp-linkage-code.disabled { color: var(--faint); border: none; cursor: default; pointer-events: none; }
