@@ -684,6 +684,7 @@ footer .foot-links a:hover { color: #FFF; }
   background: var(--saffron); transform: scaleY(0); transform-origin: bottom; transition: transform .25s ease;
 }
 .wp-card:hover, .wp-card:focus-visible { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,.06); border-color: var(--line-strong); }
+.wp-card:active { transform: translateY(-1px) scale(.985); transition-duration: .09s; }
 .wp-card:hover::before, .wp-card:focus-visible::before { transform: scaleY(1); }
 .wp-card-code {
   font: 600 .76rem var(--mono); letter-spacing: .18em; color: var(--saffron); text-transform: uppercase;
@@ -758,6 +759,23 @@ body.modal-open { overflow: hidden; }
   .wp-project-row { grid-template-columns: 1fr; gap: .3rem; }
   .wp-project-level { justify-self: start; }
   .modal-meta { grid-template-columns: 1fr; }
+}
+
+/* ---- basket motion ---- */
+@keyframes wpFadeUp { from { opacity: 0; transform: translateY(10px); } }
+@keyframes wpFadeIn { from { opacity: 0; } }
+@keyframes wpModalIn { from { opacity: 0; transform: translateY(12px) scale(.985); } }
+
+.wp-card { animation: wpFadeUp .42s cubic-bezier(.22,.61,.36,1) backwards; animation-delay: var(--d, 0s); }
+.wp-panel { animation: wpFadeUp .38s cubic-bezier(.22,.61,.36,1) backwards; }
+.wp-project-row { animation: wpFadeUp .34s cubic-bezier(.22,.61,.36,1) backwards; animation-delay: var(--d, 0s); }
+.modal-overlay { animation: wpFadeIn .22s ease backwards; }
+.modal { animation: wpModalIn .3s cubic-bezier(.22,.61,.36,1) backwards; animation-delay: .04s; }
+#modal-body.swap-in { animation: wpFadeUp .3s cubic-bezier(.22,.61,.36,1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .wp-card, .wp-panel, .wp-project-row, .modal-overlay, .modal, #modal-body.swap-in { animation: none; }
+  .wp-card:active { transform: none; }
 }
 
 /* ============ PRINT STYLESHEET ============ */
