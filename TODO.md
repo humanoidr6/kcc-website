@@ -6,10 +6,6 @@ a light "ISRO-blue" theme; day-to-day planning notes from the Windows sessions l
 
 ## Open
 
-- [ ] **`respond-basket.html` is missing** — the "BalloonSat Project Basket 2026" news card
-      links to it (404 on the live site). Source material: `~/BalloonSat_Project_Basket.{docx,pdf,xlsx}`.
-- [ ] **Dead news links** — "Read full report" (SatNOGS card), "View highlights" (telemetry
-      workshop) and "Mission details" (balloon test) still point at `#`.
 - [ ] **Contact form backend** — form exists; verify where submissions actually go
       (service/backend still to be decided with the college).
 - [ ] **Refresh the bundled TLE set** in `assets/js/passes.js` (`BAKED`) every few weeks or
@@ -38,6 +34,12 @@ a light "ISRO-blue" theme; day-to-day planning notes from the Windows sessions l
       3.9 MB→379 KB, etc.); references updated
 - [x] Render-tested: desktop/mobile/print via headless Chrome; passes panel exercised on
       live-fetch, cached and offline (DNS-blackholed) element paths
+- [x] `respond-basket.html` built (53-project BalloonSat basket) and news card link fixed;
+      news grid pruned to real, correctly-linked cards (no more dead `#` links)
+- [x] Removed ~3.8 MB of untracked PDF-extraction scratch (`basket-html.html`, `baskets.html`,
+      72 page-image files) that had been committed and were being served live, unreferenced
+- [x] Fixed stale `style.css?v=7` and leftover dark `color-scheme` meta on
+      `respond-basket.html` / `internship-report.html` / `internship-schedule.html`
 
 ## Notes for editors
 
