@@ -6,7 +6,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛰️</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<link rel="stylesheet" href="assets/css/style.css?v=11">
+<link rel="stylesheet" href="assets/css/style.css?v=12">
 <style>
   .report-header { padding: 4rem 0 2rem; border-bottom: 1px solid var(--line-strong); }
   .report-title { font-size: clamp(2rem, 5vw, 3.5rem); color: var(--ink); line-height: 1.1; margin-bottom: 1rem; }
@@ -18,7 +18,7 @@
   .stat-box .label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
   .content-section { margin-top: 4rem; }
-  .content-section h2 { font-size: 2rem; margin-bottom: 1.5rem; color: #fff; }
+  .content-section h2 { font-size: 2rem; margin-bottom: 1.5rem; color: var(--ink); }
   .content-section p { color: var(--muted); line-height: 1.8; font-size: 1.05rem; margin-bottom: 1.5rem; }
   
   .org-tags { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
@@ -43,7 +43,7 @@
 </head>
 <body>
 
-<header id="hdr" style="position: static; background: var(--void); border-bottom: 1px solid var(--line-strong);">
+<header id="hdr" class="hdr-solid">
   <div class="wrap nav">
     <a class="brand" href="index.html" aria-label="KCC home">
       <b>KCC</b>

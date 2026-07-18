@@ -103,6 +103,15 @@ header.scrolled{background:var(--signal);box-shadow:0 4px 12px rgba(0,0,0,0.15);
   width:42px;height:42px;cursor:pointer;padding:0}
 .burger svg{margin:auto}
 
+/* The default header floats over the blue hero, so its brand and links are white.
+   Secondary pages sit it on the white page background instead, which left both
+   invisible — these invert them back to ink. */
+.hdr-solid{position:static;background:var(--void);border-bottom:1px solid var(--line-strong)}
+.hdr-solid .brand b{color:var(--ink)}
+.hdr-solid .nav-links a{color:var(--signal)}
+.hdr-solid .nav-links a:hover{color:var(--saffron)}
+.hdr-solid .burger{border-color:var(--line-strong);color:var(--ink)}
+
 /* ============ HERO ============ */
 .hero{position:relative;min-height:100svh;display:flex;border-top:none;overflow:hidden;
   padding-block:7.5rem 3rem; background:var(--isro-blue);}
