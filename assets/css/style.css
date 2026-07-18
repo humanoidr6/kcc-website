@@ -319,7 +319,9 @@ header.scrolled{background:var(--signal);box-shadow:0 4px 12px rgba(0,0,0,0.15);
 .log-item p{margin-top:.45rem;color:var(--muted);font-size:.93rem;max-width:58ch}
 
 /* ============ VISIT ============ */
-.visit .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(2rem,5vw,4.5rem);align-items:center}
+/* The two columns live on .visit-grid, further in. This wrap used to hold them
+   directly; left as a grid it made a second empty track and squeezed the whole
+   section into the left half. */
 .visit h2{font-size:clamp(1.9rem,4vw,2.9rem)}
 .visit h2 em{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--saffron)}
 .visit .lead{margin-top:1.2rem;color:var(--muted)}
@@ -368,7 +370,7 @@ footer .foot-links a:hover { color: #FFF; }
   body.nav-open .nav-links a{display:block;padding:.85rem var(--pad);font-size:.78rem}
   .hero .wrap{grid-template-columns:1fr;gap:3rem}
   .orbit-box svg{width:min(88vw,430px)}
-  .about-grid,.cusat-grid,.gs-grid,.visit .wrap{grid-template-columns:1fr}
+  .about-grid,.cusat-grid,.gs-grid{grid-template-columns:1fr}
   .factcard{position:static}
   .stat-grid{grid-template-columns:1fr 1fr;gap:2rem 1.5rem}
   .fac-grid{grid-template-columns:1fr 1fr}
