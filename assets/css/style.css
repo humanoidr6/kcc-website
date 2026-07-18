@@ -112,6 +112,15 @@ header.scrolled{background:var(--signal);box-shadow:0 4px 12px rgba(0,0,0,0.15);
 .hdr-solid .nav-links a:hover{color:var(--saffron)}
 .hdr-solid .burger{border-color:var(--line-strong);color:var(--ink)}
 
+/* "Back to home" on secondary pages. Solid saffron with ink text rather than
+   the white of .nav-cta: it clears 7:1 on the orange instead of ~3:1. */
+.btn-back{
+  font:600 1.05rem var(--mono);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;
+  color:var(--ink);background:var(--saffron);padding:.62rem .95rem;white-space:nowrap;
+  transition:background .2s;
+}
+.btn-back:hover{background:#FFBE4D}
+
 /* ============ HERO ============ */
 .hero{position:relative;min-height:100svh;display:flex;border-top:none;overflow:hidden;
   padding-block:7.5rem 3rem; background:var(--isro-blue);}
