@@ -49,3 +49,32 @@
 - **Images**: ~25 MB → ~2.4 MB (certificate + inaugural PNGs converted to JPG, refs updated).
 - **sitemap.xml**: now lists internship-report and internship-schedule pages.
 - **Known gap**: `respond-basket.html` (BalloonSat news card) still missing → 404.
+
+---
+
+## Session Log — 18 Jul 2026 (Linux/Claude Code)
+
+Finished and shipped the basket-explorer work that was left uncommitted in the tree
+on 17 Jul (card grid + exit animations), after verifying it end-to-end.
+
+- **Project rows → card grid**: each project now shows code, title, a 2-line clamped
+  skills line and a footer with the difficulty pill + team size (`.wp-project-card`,
+  `.pc-*`). All 53 projects were checked to have `skills` and a `difficulty` that
+  parses to one of Beginner/Medium/Advanced — all three have colour rules.
+- **Exit animations**: `.is-closing` + a deferred hide keeps the panel/modal in the
+  DOM for 200 ms so they can animate out. The pending timer doubles as the
+  "is closing" flag, so a repeat close is a no-op and a re-open snaps the close to
+  its end first. `prefers-reduced-motion` skips straight to the hide.
+- **Fixed a mobile regression**: the card grid's `minmax(300px, 1fr)` had replaced the
+  old `.wp-project-row` 640px single-column media query. On a 320px phone the panel's
+  inner box is ~230px, so a 300px track overflowed horizontally. Now
+  `minmax(min(300px, 100%), 1fr)`. Measured before/after in a 230px panel:
+  scrollWidth 300 vs client 164 (overflow) → 164 vs 164 (clean).
+- **Verified** with headless Chrome: an 18-assertion scripted run of the open/close
+  paths (group → project → Escape → double-Escape → reopen-mid-close → back button)
+  passed with no JS errors, plus desktop and narrow-panel render checks.
+
+Testing note: Chrome clamps `--window-size` to a **500px minimum width**, so the
+DESIGN.md mobile recipe does not actually produce a 390/320px viewport. To test narrow
+layouts, constrain the container in injected CSS and compare `scrollWidth`/`clientWidth`
+instead.
