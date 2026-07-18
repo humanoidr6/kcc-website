@@ -65,27 +65,45 @@
     listEl.textContent = "";
     items.forEach(function(p, i){
       var diff = difficultyParts(p.difficulty);
-      var row = el("button", "wp-project-row");
-      row.type = "button";
-      row.style.setProperty("--d", (i * 0.045) + "s");
-      var code = el("span", "wp-project-code", p.code);
-      var title = el("span", "wp-project-title", p.title);
-      var level = el("span", "wp-project-level " + "lvl-" + diff.level.toLowerCase(), diff.level);
-      row.appendChild(code);
-      row.appendChild(title);
-      row.appendChild(level);
-      row.addEventListener("click", function(){ openProject(p.code); });
-      listEl.appendChild(row);
+      var card = el("button", "wp-project-card");
+      card.type = "button";
+      card.style.setProperty("--d", (i * 0.045) + "s");
+      card.appendChild(el("span", "pc-code", p.code));
+      card.appendChild(el("h4", "pc-title", p.title));
+      card.appendChild(el("p", "pc-skills", p.skills));
+      var foot = el("div", "pc-foot");
+      foot.appendChild(el("span", "wp-project-level lvl-" + diff.level.toLowerCase(), diff.level));
+      foot.appendChild(el("span", "pc-team", diff.team));
+      card.appendChild(foot);
+      card.addEventListener("click", function(){ openProject(p.code); });
+      listEl.appendChild(card);
     });
   }
 
   function openGroup(prefix){
+    if (panelTimer) hideGroup();   // close still in flight — land it, then reopen clean
     renderList(prefix);
+    panelEl.classList.remove("is-closing");
     panelEl.hidden = false;
     cardsEl.hidden = true;
     panelEl.scrollIntoView({block: "start", behavior: prefersReduce() ? "auto" : "smooth"});
   }
+
+  /* Exit animations need the element to stay in the DOM until they finish, so
+     hiding is deferred. The pending timer doubles as the "is closing" flag: a
+     repeat call (double-click, held Escape) is ignored, and a re-open snaps the
+     close to its end first rather than animating out of a half-faded state. */
+  var EXIT_MS = 200, panelTimer = 0, modalTimer = 0;
+
   function closeGroup(){
+    if (panelEl.hidden || panelTimer) return;
+    if (prefersReduce()){ hideGroup(); return; }
+    panelEl.classList.add("is-closing");
+    panelTimer = setTimeout(hideGroup, EXIT_MS);
+  }
+  function hideGroup(){
+    clearTimeout(panelTimer); panelTimer = 0;
+    panelEl.classList.remove("is-closing");
     panelEl.hidden = true;
     cardsEl.hidden = false;
   }
@@ -124,6 +142,7 @@
   function openProject(code){
     var p = byCode[code];
     if (!p) return;
+    if (modalTimer) hideModal();   // close still in flight — land it, then reopen clean
     // already open means this is a linkage cross-link: the overlay won't replay
     // its entrance animation, so fade the swapped content in by hand
     var wasOpen = !modalEl.hidden;
@@ -188,12 +207,21 @@
       modalBodyEl.classList.add("swap-in");
     } else {
       modalBodyEl.classList.remove("swap-in");
+      modalEl.classList.remove("is-closing");
       modalEl.hidden = false;
       document.body.classList.add("modal-open");
     }
     modalCloseBtn.focus();
   }
   function closeModal(){
+    if (modalEl.hidden || modalTimer) return;
+    if (prefersReduce()){ hideModal(); return; }
+    modalEl.classList.add("is-closing");
+    modalTimer = setTimeout(hideModal, EXIT_MS);
+  }
+  function hideModal(){
+    clearTimeout(modalTimer); modalTimer = 0;
+    modalEl.classList.remove("is-closing");
     modalEl.hidden = true;
     document.body.classList.remove("modal-open");
   }
