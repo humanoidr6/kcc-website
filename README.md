@@ -100,5 +100,5 @@ photographs, faculty/team names and contact details — see [TODO.md](TODO.md).
 
 ## Credits
 
-Built by a Chandigarh University student with Claude Code. The site's footer carries the
+Built by a Chandigarh University student. The site's footer carries the
 dedication: *built with respect for the memory of Kalpana Chawla (1962–2003).*
