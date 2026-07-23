@@ -114,11 +114,3 @@ google-chrome --headless=new --hide-scrollbars --window-size=390,844 \
 Screenshot with a huge window *without* flattening the hero and the `100svh` hero will
 swallow the whole capture — that's a test artifact, not a page bug.
 
-## Claude Code artifact preview
-
-A preview of this page also exists as a claude.ai artifact
-(https://claude.ai/code/artifact/a2846509-3300-43b4-b5ed-c2a909e2800b). The artifact host
-wraps files in its own `<!doctype>…<head>…<body>` skeleton, so to re-publish there, strip
-this file's outer `<!doctype html>/<html>/<head>/<body>` wrapper (start at `<title>`, end
-before `</body>`) — the GitHub copy is the complete standalone document and the source of
-truth.
