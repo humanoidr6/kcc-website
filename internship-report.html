@@ -12,7 +12,7 @@
   .report-title { font-size: clamp(2rem, 5vw, 3.5rem); color: var(--ink); line-height: 1.1; margin-bottom: 1rem; }
   .report-subtitle { color: var(--saffron); font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.5rem; display: block; }
   
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 3rem 0; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 3rem 0; }
   .stat-box { background: var(--panel); padding: 2rem; text-align: center; }
   .stat-box .num { display: block; font-size: 2.5rem; font-family: var(--mono); color: var(--saffron); margin-bottom: 0.5rem; font-weight: bold; }
   .stat-box .label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -119,7 +119,7 @@
       <h2>Programme Highlights</h2>
       <p>The KCC Summer Internship Programme 2026 was designed as an intensive, multidisciplinary training programme that combined academic learning with practical engineering experience.</p>
       
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 1.5rem; margin: 2rem 0;">
         <div class="anim-card rv" style="--d:.1s; background: var(--panel); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--line-strong);">
           <strong style="color: var(--saffron); display: block; margin-bottom: 0.5rem; font-size: 1.1rem;">Duration &amp; Period</strong>
           <p style="margin: 0;">25 Days <br><span style="color: var(--muted);">15 June &ndash; 10 July 2026</span></p>
@@ -270,7 +270,7 @@
     <div class="content-section rv" style="--d:.65s">
       <h2>Event Gallery</h2>
       <p>A closer look at the activities, expert interactions, and collaborative teamwork during the internship.</p>
-      <div class="gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
+      <div class="gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 1rem; margin-top: 1.5rem;">
         <img src="assets/images/report_img_8.jpeg" alt="Event Photo 1" class="rv" style="--d:.1s; width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid var(--line-strong);">
         <img src="assets/images/report_img_9.jpeg" alt="Event Photo 2" class="rv" style="--d:.3s; width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid var(--line-strong);">
         <img src="assets/images/report_img_10.jpeg" alt="Event Photo 3" class="rv" style="--d:.5s; width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid var(--line-strong);">
