@@ -22,6 +22,7 @@
   --faint:#64748B;
   --saffron:#F37021;
   --saffron-deep:#D98A0F;
+  --saffron-ink:#C2500F;
   --signal:#0A5B9C;
   --display:"URW Gothic","Avantgarde","Century Gothic","Futura",system-ui,sans-serif;
   --serif:"C059","Century Schoolbook",Georgia,serif;
@@ -58,7 +59,7 @@ p{margin:0}
 
 .eyebrow{
   font:600 .72rem/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;
-  color:var(--saffron);display:flex;align-items:center;gap:.9rem;margin-bottom:1.15rem;
+  color:var(--saffron-ink);display:flex;align-items:center;gap:.9rem;margin-bottom:1.15rem;
 }
 .eyebrow::after{content:"";height:1px;flex:0 0 3.25rem;background:var(--line-strong)}
 .eyebrow.center{justify-content:center}
@@ -86,6 +87,8 @@ header.scrolled{background:var(--signal);box-shadow:0 4px 12px rgba(0,0,0,0.15);
 .brand b{font:600 1.5rem var(--display);letter-spacing:.14em;color:#FFFFFF}
 .brand b i{font-style:normal;color:var(--saffron)}
 .brand span{font:600 1.15rem var(--mono);letter-spacing:.15em;color:var(--saffron)}
+#hdr .brand span{color:#FBCE96}
+#hdr.hdr-solid .brand span{color:var(--saffron-ink)}
 .nav-links{display:flex;align-items:center;gap:1.6rem;list-style:none;margin:0;padding:0}
 .nav-links a{
   font:600 1.05rem var(--mono);letter-spacing:.14em;text-transform:uppercase;
@@ -343,8 +346,8 @@ footer .foot-links a:hover { color: #FFF; }
   color:var(--muted);text-decoration:none}
 .foot-links a:hover{color:var(--ink)}
 .foot-note{margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--line);
-  font-size:.78rem;color:var(--faint);max-width:86ch;line-height:1.7}
-.foot-note a{color:var(--muted)}
+  font-size:.78rem;color:#94A3B8;max-width:86ch;line-height:1.7}
+.foot-note a{color:#CBD5E1}
 
 /* ============ REVEAL ============ */
 .rv{opacity:0;transform:translateY(14px);transition:opacity .65s ease,transform .65s ease;
