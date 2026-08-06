@@ -368,7 +368,6 @@ footer .foot-links a:hover { color: #FFF; }
     background:var(--void);border-bottom:1px solid var(--line-strong);padding:.5rem 0 1rem;z-index:49;
   }
   body.nav-open .nav-links a{display:block;padding:.85rem var(--pad);font-size:.78rem}
-  .hero .wrap{grid-template-columns:1fr;gap:3rem}
   .orbit-box svg{width:min(88vw,430px)}
   .about-grid,.cusat-grid,.gs-grid{grid-template-columns:1fr}
   .factcard{position:static}
@@ -378,9 +377,29 @@ footer .foot-links a:hover { color: #FFF; }
   .res-row{grid-template-columns:1fr;gap:.4rem}
   .datastrip li{flex:1 1 50%;border-bottom:1px solid var(--line)}
 }
+/* The globe is absolutely positioned, so it never stacks below the copy the way
+   the rest of the hero does. Once the text column spans the full width it landed
+   straight on top of the headline, so on phones it drops to the lower corner and
+   fades back into the starfield as atmosphere rather than competing with the text. */
+@media (max-width:760px){
+  .orbit-box{
+    top:auto;bottom:-6vh;right:-42vw;transform:none;
+    width:100vw;opacity:.22;
+  }
+  .orbit-box svg{width:100%}
+  .orbit-box text{display:none}
+  .hero{padding-block:6.5rem 3rem}
+}
+
 @media (max-width:560px){
   .nav-cta{display:none}
   .nav{gap:1rem}
+  /* The brand wordmark and .btn-back are both nowrap, so at phone widths they
+     stopped fitting on one row and pushed the whole page wider than the
+     viewport. Scaled down here; below 380px the subtitle goes entirely. */
+  .brand b{font-size:1.25rem}
+  .brand span{font-size:.72rem;letter-spacing:.12em}
+  .btn-back{font-size:.72rem;padding:.5rem .7rem;letter-spacing:.1em}
   .apps{grid-template-columns:1fr}
   .fac-grid{grid-template-columns:1fr}
   .stat-grid{grid-template-columns:1fr 1fr;gap:1.75rem 1.25rem}
@@ -390,11 +409,14 @@ footer .foot-links a:hover { color: #FFF; }
   .objectives .row{grid-template-columns:1fr;gap:.3rem}
   .crow{grid-template-columns:1fr;gap:.1rem}
 }
+@media (max-width:380px){
+  .brand span{display:none}
+}
 
 /* ============ GALLERY & LIGHTBOX ============ */
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
   gap: 1.5rem;
 }
 .gallery-item {
@@ -485,7 +507,7 @@ footer .foot-links a:hover { color: #FFF; }
 /* ============ TEAM ============ */
 .team-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 2rem;
   margin-top: 2rem;
 }
@@ -580,7 +602,7 @@ footer .foot-links a:hover { color: #FFF; }
 
 .values-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 1.5rem;
   margin-top: 4rem;
   text-align: center;
@@ -615,7 +637,7 @@ footer .foot-links a:hover { color: #FFF; }
 
 /* ============ NEWS & UPDATES ============ */
 .news-section { background: var(--panel); border-bottom: 1px solid var(--line); }
-.news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: clamp(1.5rem, 3vw, 2.5rem); }
+.news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: clamp(1.5rem, 3vw, 2.5rem); }
 .news-card {
   background: var(--void); border: 1px solid var(--line); padding: 2rem;
   display: flex; flex-direction: column; gap: 1rem;
@@ -691,7 +713,7 @@ footer .foot-links a:hover { color: #FFF; }
 }
 
 /* ============ BASKET: WORK-PACKAGE CARDS ============ */
-.wp-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: clamp(1.25rem, 3vw, 2rem); }
+.wp-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: clamp(1.25rem, 3vw, 2rem); }
 .wp-cards[hidden] { display: none; }
 .wp-card {
   background: var(--void); border: 1px solid var(--line); padding: 1.75rem;
