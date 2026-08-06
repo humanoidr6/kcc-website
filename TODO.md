@@ -13,7 +13,6 @@ a light "ISRO-blue" theme; day-to-day planning notes from the Windows sessions l
 - [ ] **DESIGN.md rewrite** — it still documents the retired dark single-file design; the
       testing recipe section remains valid.
 - [ ] Custom domain (e.g. a `cuchd.in` subdomain) — CNAME file + Pages settings.
-- [ ] Lighthouse re-audit after the July 16 changes.
 - [ ] Hindi / Punjabi language toggle (long-standing wish-list item).
 
 ## Done
@@ -40,6 +39,19 @@ a light "ISRO-blue" theme; day-to-day planning notes from the Windows sessions l
       72 page-image files) that had been committed and were being served live, unreferenced
 - [x] Fixed stale `style.css?v=7` and leftover dark `color-scheme` meta on
       `respond-basket.html` / `internship-report.html` / `internship-schedule.html`
+- [x] Mobile horizontal-overflow fixes (hero globe, brand/back-button wrap, grid
+      `minmax()` clamping) and an unclosed-tag bug in `internship-schedule.html`
+- [x] **Lighthouse re-audit (6 Aug 2026)** — converted all photo/gallery assets to
+      resized WebP (5.6 MB &rarr; 1.6 MB total; the satellite icon alone was a
+      701 KB PNG rendered at 60&times;60 px, now a 20 KB WebP), added
+      `width`/`height` + `loading="lazy"` on below-the-fold images, fixed a
+      copy-paste bug where the footer note/links inherited light-theme text
+      colors on the dark footer, added `--saffron-ink` (an accessible-contrast
+      orange) for saffron text on light backgrounds, fixed header/footer brand
+      `aria-label`s to include their visible text, and added missing meta
+      descriptions on the report/schedule/basket pages. Homepage: performance
+      75&rarr;99, accessibility 97&rarr;100, LCP 12.2s&rarr;2.0s, page weight
+      4.3MB&rarr;0.9MB. Internship report page: all four categories 100.
 
 ## Notes for editors
 
