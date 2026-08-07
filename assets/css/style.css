@@ -711,6 +711,9 @@ footer .foot-links a:hover { color: #FFF; }
   border-color: var(--saffron);
   box-shadow: 0 0 0 3px rgba(243, 112, 33, 0.15);
 }
+.form-status { margin-top: 0.9rem; font-size: 0.85rem; min-height: 1.2em; }
+.form-status.ok { color: #15803d; }
+.form-status.err { color: #dc2626; }
 @media (max-width: 1000px) {
   .visit-grid { grid-template-columns: 1fr; }
 }
