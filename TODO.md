@@ -6,8 +6,10 @@ a light "ISRO-blue" theme; day-to-day planning notes from the Windows sessions l
 
 ## Open
 
-- [ ] **Contact form backend** — form exists; verify where submissions actually go
-      (service/backend still to be decided with the college).
+- [ ] **Confirm the FormSubmit.co activation email** was clicked (sent to
+      humanoidr6@gmail.com on first real submission) — until then contact/suggestion
+      mail silently won't deliver. Consider moving off a personal Gmail to an
+      official KCC address once the college assigns one.
 - [ ] **Refresh the bundled TLE set** in `assets/js/passes.js` (`BAKED`) every few weeks or
       whenever editing — it is the offline fallback for the passes panel.
 - [ ] **DESIGN.md rewrite** — it still documents the retired dark single-file design; the
@@ -52,6 +54,15 @@ a light "ISRO-blue" theme; day-to-day planning notes from the Windows sessions l
       descriptions on the report/schedule/basket pages. Homepage: performance
       75&rarr;99, accessibility 97&rarr;100, LCP 12.2s&rarr;2.0s, page weight
       4.3MB&rarr;0.9MB. Internship report page: all four categories 100.
+- [x] Fixed the ground-station photo rendering stretched in the Collaborations
+      card &mdash; its parent `.console-body` is `display:grid` inside a
+      flex-stretched card, so the image's row inherited the stretch; added
+      explicit `width:100%; height:auto`.
+- [x] **Contact + basket suggestion forms now actually submit** (8 Aug 2026) &mdash;
+      both previously just showed an `alert()` and reset with nowhere for the
+      data to go. Wired to FormSubmit.co's AJAX endpoint (`assets/js/forms.js`),
+      staying on-page for the response instead of redirecting, plus a honeypot
+      field against bot spam. Submissions email to humanoidr6@gmail.com.
 
 ## Notes for editors
 
