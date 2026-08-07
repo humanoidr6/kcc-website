@@ -389,7 +389,7 @@ footer .foot-links a:hover { color: #FFF; }
 @media (max-width:760px){
   .orbit-box{
     top:auto;bottom:-6vh;right:-42vw;transform:none;
-    width:100vw;opacity:.22;
+    width:100vw;opacity:.6;
   }
   .orbit-box svg{width:100%}
   .orbit-box text{display:none}
