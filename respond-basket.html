@@ -161,20 +161,22 @@ Student Project Basket — One Semester (5 Months)</p>
         <h3>Project Suggestions &amp; Feedback</h3>
         <p style="margin-bottom: 2rem; color: var(--muted);">Have an idea for a new project, or feedback on an existing subsystem? Submit your suggestions below to the Programme Office.</p>
         
-        <form onsubmit="event.preventDefault(); alert('Suggestion submitted successfully! Thank you.'); this.reset();">
+        <form id="suggestionForm">
           <div class="form-group">
             <label for="name">Name / Team Name</label>
-            <input type="text" id="name" class="form-control" required placeholder="e.g. John Doe / Team Alpha">
+            <input type="text" id="name" name="name" class="form-control" required placeholder="e.g. John Doe / Team Alpha">
           </div>
           <div class="form-group">
             <label for="topic">Related Subsystem / Topic</label>
-            <input type="text" id="topic" class="form-control" required placeholder="e.g. Avionics, Science Payload, New Idea">
+            <input type="text" id="topic" name="topic" class="form-control" required placeholder="e.g. Avionics, Science Payload, New Idea">
           </div>
           <div class="form-group">
             <label for="suggestion">Your Suggestion</label>
-            <textarea id="suggestion" class="form-control" required placeholder="Describe your project idea or suggestion in detail..."></textarea>
+            <textarea id="suggestion" name="suggestion" class="form-control" required placeholder="Describe your project idea or suggestion in detail..."></textarea>
           </div>
+          <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
           <button type="submit" class="btn-submit">Submit Suggestion</button>
+          <p class="form-status" id="suggestionFormStatus" role="status" aria-live="polite"></p>
         </form>
       </div>
 
@@ -188,5 +190,6 @@ Student Project Basket — One Semester (5 Months)</p>
 
 <script src="assets/js/basket-data.js?v=1"></script>
 <script src="assets/js/basket.js?v=4"></script>
+<script src="assets/js/forms.js?v=1"></script>
 </body>
 </html>
