@@ -40,6 +40,11 @@
   .gallery-grid img:hover { transform: scale(1.05); filter: brightness(1.15); box-shadow: 0 10px 25px rgba(0,0,0,0.7); z-index: 10; position: relative; }
 
   .dl-btn { display: inline-flex; align-items: center; gap: 0.75rem; margin-top: 2rem; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 700px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -160,7 +165,7 @@
         <img src="assets/images/report_img_2.webp" width="900" height="355" loading="lazy" alt="Collaborators" class="anim-img" style="width: 100%; height: auto; max-width: 800px; display: block; margin: 0 auto 2rem; border-radius: 4px;">
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; margin-top: 2rem;">
+      <div class="two-col" style="gap: 4rem; align-items: start; margin-top: 2rem;">
         <div>
           <h3 style="color: #fff; margin-bottom: 1rem;">Collaborating Organizations (DoS)</h3>
           <p>The internship programme was conducted with the active participation and academic support of distinguished scientists, engineers, academicians, and experts from organizations under the <strong>Department of Space (DoS), Government of India</strong>, including:</p>
@@ -191,7 +196,7 @@
       
       <div style="margin-top: 1.5rem;">
         <p style="margin-bottom: 0.5rem; color: var(--saffron); font-weight: bold;">The Boot Camp covered a wide range of topics, including:</p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+        <div class="two-col" style="gap: 1rem; margin-top: 1rem;">
           <ul style="color: var(--muted); line-height: 1.6; font-size: 0.95rem; margin: 0;">
             <li>Mission Analysis and Systems Engineering</li>
             <li>Satellite Bus Architecture</li>
@@ -210,14 +215,14 @@
           </ul>
         </div>
       </div>
-      <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="two-col" style="margin-top: 2rem; gap: 1rem;">
         <img src="assets/images/report_img_3.webp" width="900" height="506" loading="lazy" alt="Boot Camp Hands-on Session" class="anim-img rv" style="--d:.2s; width: 100%; height: auto; border-radius: 4px; border: 1px solid var(--line-strong);">
         <img src="assets/images/report_img_4.webp" width="900" height="485" loading="lazy" alt="Boot Camp Practical Engineering" class="anim-img rv" style="--d:.4s; width: 100%; height: auto; border-radius: 4px; border: 1px solid var(--line-strong);">
       </div>
     </div>
 
     <div class="content-section rv" style="--d:.6s">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
+      <div class="two-col" style="gap: 3rem; align-items: center;">
         <div>
           <h2>Joint Certification with IIST</h2>
           <p>A significant outcome of this initiative was the issuance of <strong>joint certificates by Chandigarh University and the Indian Institute of Space Science and Technology (IIST)</strong> for students who successfully completed the Satellite Engineering Boot Camp.</p>
@@ -243,7 +248,7 @@
 
     <div class="content-section rv" style="--d:.7s">
       <h2>Valedictory Function & Conclusion</h2>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+      <div class="two-col" style="gap: 2rem;">
         <div class="anim-card rv" style="--d:.1s; background: var(--panel); border: 1px solid var(--line); padding: 2rem; border-radius: 4px;">
           <h3 style="color: var(--saffron); margin-bottom: 1rem; font-size: 1.1rem;">Valedictory Ceremony</h3>
           <p style="font-size: 0.95rem; margin-bottom: 1rem;">The Valedictory Function was held on <strong>10 July 2026</strong> in the distinguished presence of <strong>Dr. M. Nageswara Rao</strong>, Distinguished Scientist and former Satish Dhawan Professor Scientist, ISRO, who graced the occasion as the <strong>Chief Guest</strong>.</p>
@@ -259,7 +264,7 @@
           </ul>
         </div>
       </div>
-      <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="two-col" style="margin-top: 2rem; gap: 1rem;">
         <img src="assets/images/new_certificate.webp" width="700" height="495" loading="lazy" alt="Participant Certificate" class="anim-img rv" style="--d:.1s; width: 100%; height: auto; border-radius: 4px; border: 1px solid var(--line-strong);">
         <img src="assets/images/valedictory_group.webp" width="700" height="393" loading="lazy" alt="Group Photo at Valedictory Function" class="anim-img rv" style="--d:.3s; width: 100%; height: auto; border-radius: 4px; border: 1px solid var(--line-strong);">
       </div>
