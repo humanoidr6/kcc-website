@@ -65,10 +65,11 @@
   if (cv) {
     var cx = cv.getContext("2d");
     var hero = document.getElementById("hero");
-    var stars = [], meteor = null, nextMeteor = 0, running = false, raf = 0;
+    var stars = [], meteor = null, nextMeteor = 0, running = false, raf = 0, heroW = 0, heroH = 0;
     function sizeStars(){
       var dpr = Math.min(devicePixelRatio || 1, 2);
       var w = hero.clientWidth, h = hero.clientHeight;
+      heroW = w; heroH = h;
       cv.width = w * dpr; cv.height = h * dpr;
       cx.setTransform(dpr, 0, 0, dpr, 0, 0);
       stars = [];
@@ -86,7 +87,7 @@
       }
     }
     function drawStars(t){
-      var w = hero.clientWidth, h = hero.clientHeight;
+      var w = heroW, h = heroH;
       cx.clearRect(0, 0, w, h);
       for (var i = 0; i < stars.length; i++){
         var s = stars[i];
@@ -139,18 +140,19 @@
   var tp = document.getElementById("track");
   if (tp) {
     var tctx = tp.getContext("2d");
-    var panel = tp.parentElement, tRunning = false, tRaf = 0;
+    var panel = tp.parentElement, tRunning = false, tRaf = 0, panelW = 0, panelH = 0;
     var STN = {lon: 76.57, lat: 30.77};
     function tSize(){
       var dpr = Math.min(devicePixelRatio || 1, 2);
-      tp.width = panel.clientWidth * dpr; tp.height = panel.clientHeight * dpr;
+      panelW = panel.clientWidth; panelH = panel.clientHeight;
+      tp.width = panelW * dpr; tp.height = panelH * dpr;
       tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     function trackY(x, w, h, amp, phase){
       return h/2 + Math.sin((x / w) * Math.PI * 2 + phase) * (h * amp);
     }
     function drawTrack(t){
-      var w = panel.clientWidth, h = panel.clientHeight;
+      var w = panelW, h = panelH;
       tctx.clearRect(0, 0, w, h);
       // dot grid "map"
       tctx.fillStyle = "rgba(148,166,201,.18)";
