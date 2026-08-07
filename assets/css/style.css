@@ -371,7 +371,8 @@ footer .foot-links a:hover { color: #FFF; }
     display:flex;position:fixed;inset:72px 0 auto;flex-direction:column;gap:0;
     background:var(--void);border-bottom:1px solid var(--line-strong);padding:.5rem 0 1rem;z-index:49;
   }
-  body.nav-open .nav-links a{display:block;padding:.85rem var(--pad);font-size:.78rem}
+  body.nav-open .nav-links a{display:block;padding:.85rem var(--pad);font-size:.78rem;color:var(--ink)}
+  body.nav-open .nav-links a:hover{color:var(--saffron)}
   .orbit-box svg{width:min(88vw,430px)}
   .about-grid,.cusat-grid,.gs-grid{grid-template-columns:1fr}
   .factcard{position:static}
