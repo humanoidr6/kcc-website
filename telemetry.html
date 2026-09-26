@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>KCC Live Telemetry</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛰️</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Live sensor telemetry from the KCC student test node &mdash; a Teensy 4.1 radioing temperature, humidity, light and acceleration over LoRa to an ESP32 ground station at Chandigarh University.">
+<link rel="stylesheet" href="assets/css/style.css?v=14">
+<style>
+  .tm-root{
+    --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a;
+    --good:#15803D; --warn:#B45309; --bad:#B91C1C;
+  }
+  .tm-head{padding-block:3rem 1.5rem;border-top:none}
+  .tm-head h1{font-size:clamp(2rem,5vw,3.1rem);color:var(--ink);margin-bottom:.9rem}
+  .tm-head p{color:var(--muted);max-width:62ch}
+
+  .tm-status{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem 1.5rem;margin-top:1.6rem;
+    font:500 .85rem/1.3 var(--mono);color:var(--muted)}
+  .tm-pill{display:inline-flex;align-items:center;gap:.55rem;padding:.45rem .85rem;border-radius:999px;
+    border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase}
+  .tm-pill .ic{width:10px;height:10px;border-radius:50%;background:var(--faint);flex:none}
+  .tm-pill[data-state="live"] .ic{background:var(--good);box-shadow:0 0 0 3px rgba(21,128,61,.18)}
+  .tm-pill[data-state="live"]{border-color:rgba(21,128,61,.45)}
+  .tm-pill[data-state="stale"] .ic,.tm-pill[data-state="waiting"] .ic{background:var(--warn)}
+  .tm-pill[data-state="offline"] .ic,.tm-pill[data-state="error"] .ic{background:var(--bad)}
+  @media (prefers-reduced-motion:no-preference){
+    .tm-pill[data-state="live"] .ic{animation:tm-pulse 1.6s ease-in-out infinite}
+    @keyframes tm-pulse{50%{box-shadow:0 0 0 6px rgba(21,128,61,0)}}
+  }
+
+  .tm-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(150px,100%),1fr));gap:1rem;margin-block:1.5rem 2.5rem}
+  .tm-tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:1rem 1.1rem}
+  .tm-tile .lbl{font:600 .7rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  .tm-tile .val{font:600 1.9rem/1.15 var(--body);color:var(--ink);margin-top:.55rem;white-space:nowrap}
+  .tm-tile .val small{font-size:.95rem;font-weight:500;color:var(--muted);margin-left:.2rem}
+  .tm-tile .sub{font:.8rem/1.35 var(--mono);color:var(--muted);margin-top:.35rem;font-variant-numeric:tabular-nums}
+  .tm-tile.is-stale .val{color:var(--faint)}
+
+  .tm-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr));gap:1.25rem}
+  .tm-card{background:var(--void);border:1px solid var(--line);border-radius:8px;padding:1rem 1.1rem .75rem;position:relative;min-width:0}
+  .tm-card.wide{grid-column:1/-1}
+  .tm-card h2{font:600 .95rem/1.3 var(--body);color:var(--ink)}
+  .tm-card .unit{font:.78rem var(--mono);color:var(--faint);margin-top:.15rem}
+  .tm-legend{display:flex;gap:1.1rem;margin-top:.5rem;font:.8rem var(--mono);color:var(--muted)}
+  .tm-legend span{display:inline-flex;align-items:center;gap:.4rem}
+  .tm-legend i{width:16px;height:2px;border-radius:1px;display:inline-block}
+  .tm-plot{position:relative;height:190px;margin-top:.4rem;touch-action:pan-y}
+  .tm-card.wide .tm-plot{height:220px}
+  .tm-plot svg{width:100%;height:100%;overflow:visible}
+  .tm-plot .grid line{stroke:var(--line);stroke-width:1}
+  .tm-plot .axis text{fill:var(--faint);font:11px var(--mono);font-variant-numeric:tabular-nums}
+  .tm-plot .ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .tm-plot .xh{stroke:var(--faint);stroke-width:1}
+  .tm-plot .dot{stroke:var(--void);stroke-width:2}
+  .tm-empty[hidden]{display:none}
+  .tm-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font:.85rem var(--mono);color:var(--faint);pointer-events:none}
+  .tm-tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;border-radius:6px;
+    padding:.45rem .6rem;font:.78rem/1.45 var(--mono);white-space:nowrap;z-index:5;transform:translate(-50%,-100%);
+    box-shadow:0 4px 14px rgba(15,23,42,.25)}
+  .tm-tip b{font-weight:700}
+  .tm-tip .k{display:inline-block;width:12px;height:2px;margin-right:.4rem;vertical-align:middle}
+  .tm-tip .t{color:#CBD5E1}
+
+  .tm-section{margin-top:3rem}
+  .tm-section h2.sec{font-size:1.45rem;color:var(--ink);margin-bottom:.4rem}
+  .tm-section p.note{color:var(--muted);font-size:.95rem;margin-bottom:1rem;max-width:70ch}
+  .tm-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+  .tm-table{width:100%;border-collapse:collapse;font:.85rem/1.4 var(--mono);font-variant-numeric:tabular-nums;min-width:44rem}
+  .tm-table th{text-align:right;font-weight:600;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+    background:var(--panel);padding:.6rem .7rem;border-bottom:1px solid var(--line)}
+  .tm-table td{text-align:right;padding:.45rem .7rem;border-bottom:1px solid var(--line);color:var(--ink)}
+  .tm-table th:first-child,.tm-table td:first-child,.tm-table th:nth-child(2),.tm-table td:nth-child(2){text-align:left}
+  .tm-table tr:last-child td{border-bottom:none}
+  .tm-raw{margin-top:.8rem;font:.8rem/1.5 var(--mono);color:var(--muted);word-break:break-all}
+  .tm-raw code{color:var(--ink)}
+
+  .tm-chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:.5rem;margin-top:1rem}
+  .tm-chain .n{flex:1 1 150px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.8rem .9rem}
+  .tm-chain .n b{display:block;font:600 .9rem var(--body);color:var(--ink)}
+  .tm-chain .n span{font:.78rem/1.4 var(--mono);color:var(--muted)}
+  .tm-chain .ar{align-self:center;color:var(--faint);font:1.1rem var(--mono)}
+  @media (max-width:640px){.tm-chain .ar{display:none}}
+  .tm-foot{margin-block:3rem 4rem;font-size:.85rem;color:var(--faint);max-width:70ch}
+</style>
+</head>
+<body>
+
+<header id="hdr" class="hdr-solid">
+  <div class="wrap nav">
+    <a class="brand" href="index.html" aria-label="KCC, Chandigarh University — home">
+      <b>KCC</b>
+      <span>CHANDIGARH UNIVERSITY</span>
+    </a>
+    <a class="btn-back" href="index.html#news">&larr; Back to Home</a>
+  </div>
+</header>
+
+<main id="top" class="tm-root">
+  <section class="tm-head">
+    <div class="wrap">
+      <p class="eyebrow">Ground station &middot; KCC-NODE-01</p>
+      <h1>Live Telemetry</h1>
+      <p>Sensor readings from a student-built test node. A Teensy&nbsp;4.1 radios its
+        temperature, humidity, light and acceleration over LoRa to an ESP32 ground
+        station, which relays every frame to this page as it arrives.</p>
+      <div class="tm-status" role="status" aria-live="polite">
+        <span class="tm-pill" id="tm-pill" data-state="connecting"><span class="ic" aria-hidden="true"></span><span id="tm-pill-text">Connecting</span></span>
+        <span id="tm-status-detail">Connecting to the relay&hellip;</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="tm-tiles">
+      <div class="tm-tile" data-k="temp"><div class="lbl">Temperature</div><div class="val">&mdash;</div><div class="sub">DHT11</div></div>
+      <div class="tm-tile" data-k="hum"><div class="lbl">Humidity</div><div class="val">&mdash;</div><div class="sub">DHT11</div></div>
+      <div class="tm-tile" data-k="ldr"><div class="lbl">Light level</div><div class="val">&mdash;</div><div class="sub">LDR, 12-bit ADC</div></div>
+      <div class="tm-tile" data-k="acc"><div class="lbl">Acceleration Z</div><div class="val">&mdash;</div><div class="sub">MPU6050</div></div>
+      <div class="tm-tile" data-k="rssi"><div class="lbl">Signal</div><div class="val">&mdash;</div><div class="sub">LoRa 440&nbsp;MHz, SF7</div></div>
+      <div class="tm-tile" data-k="pkts"><div class="lbl">Frames this session</div><div class="val">0</div><div class="sub">&nbsp;</div></div>
+    </div>
+
+    <div class="tm-charts">
+      <div class="tm-card wide">
+        <h2>Acceleration</h2>
+        <div class="unit">g, last 2 minutes</div>
+        <div class="tm-legend">
+          <span><i style="background:var(--series-1)"></i>X</span>
+          <span><i style="background:var(--series-2)"></i>Y</span>
+          <span><i style="background:var(--series-3)"></i>Z</span>
+        </div>
+        <div class="tm-plot" id="ch-acc"></div>
+      </div>
+      <div class="tm-card"><h2>Light level</h2><div class="unit">raw ADC counts (0&ndash;4095), last 2 minutes</div><div class="tm-plot" id="ch-ldr"></div></div>
+      <div class="tm-card"><h2>Signal strength</h2><div class="unit">RSSI in dBm, last 2 minutes</div><div class="tm-plot" id="ch-rssi"></div></div>
+      <div class="tm-card"><h2>Temperature</h2><div class="unit">&deg;C, last 2 minutes</div><div class="tm-plot" id="ch-temp"></div></div>
+      <div class="tm-card"><h2>Humidity</h2><div class="unit">% relative humidity, last 2 minutes</div><div class="tm-plot" id="ch-hum"></div></div>
+    </div>
+
+    <div class="tm-section">
+      <h2 class="sec">Recent frames</h2>
+      <p class="note">The last 12 frames, newest first. A gap in the sequence number means a packet was lost on the radio link.</p>
+      <div class="tm-table-wrap">
+        <table class="tm-table">
+          <thead><tr><th scope="col">Seq</th><th scope="col">Received</th><th scope="col">Temp &deg;C</th><th scope="col">Hum %</th><th scope="col">Light</th><th scope="col">X g</th><th scope="col">Y g</th><th scope="col">Z g</th><th scope="col">RSSI</th><th scope="col">SNR</th></tr></thead>
+          <tbody id="tm-rows"><tr><td colspan="10" style="text-align:center;color:var(--faint)">No frames yet</td></tr></tbody>
+        </table>
+      </div>
+      <p class="tm-raw">Last raw packet: <code id="tm-raw">&mdash;</code></p>
+    </div>
+
+    <div class="tm-section">
+      <h2 class="sec">How the data gets here</h2>
+      <div class="tm-chain">
+        <div class="n"><b>Teensy 4.1 node</b><span>DHT11, LDR and MPU6050 sampled four times a second</span></div>
+        <div class="ar" aria-hidden="true">&rarr;</div>
+        <div class="n"><b>LoRa radio link</b><span>SX1278 at 440&nbsp;MHz, SF7, 125&nbsp;kHz, CRC on</span></div>
+        <div class="ar" aria-hidden="true">&rarr;</div>
+        <div class="n"><b>ESP32 ground station</b><span>Decodes each frame and publishes it over Wi-Fi</span></div>
+        <div class="ar" aria-hidden="true">&rarr;</div>
+        <div class="n"><b>MQTT relay</b><span>Pushed to this page over a secure WebSocket</span></div>
+      </div>
+    </div>
+
+    <p class="tm-foot">Frames travel through a public MQTT broker, so treat these readings as a live
+      demonstration rather than calibrated measurements. When the node is powered down the page
+      shows the last frame it received and how long ago that was.</p>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js"></script>
+<script src="assets/js/telemetry.js?v=1"></script>
+</body>
+</html>
