@@ -1,179 +1,310 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>KCC Live Telemetry</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛰️</text></svg>">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light">
-<meta name="description" content="Live sensor telemetry from the KCC student test node &mdash; a Teensy 4.1 radioing temperature, humidity, light and acceleration over LoRa to an ESP32 ground station at Chandigarh University.">
-<link rel="stylesheet" href="assets/css/style.css?v=14">
-<style>
-  .tm-root{
-    --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a;
-    --good:#15803D; --warn:#B45309; --bad:#B91C1C;
-  }
-  .tm-head{padding-block:3rem 1.5rem;border-top:none}
-  .tm-head h1{font-size:clamp(2rem,5vw,3.1rem);color:var(--ink);margin-bottom:.9rem}
-  .tm-head p{color:var(--muted);max-width:62ch}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KCC Telemetry Console</title>
+    <meta name="description" content="Live telemetry console for KCC-NODE-01 &mdash; a Teensy 4.1 radioing temperature, humidity, light and acceleration over LoRa to an ESP32 ground station at Chandigarh University.">
+    <meta name="color-scheme" content="dark">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛰️</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --panel-bg: #87919e;
+            --panel-border-light: #b4bcc4;
+            --panel-border-dark: #525a61;
+            --crt-bg: #0a110a;
+            --crt-green: #33ff33;
+            --crt-amber: #ffcc00;
+            --crt-red: #ff3333;
+            --crt-dim: #1a4d1a;
+            --label-color: #222;
+        }
 
-  .tm-status{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem 1.5rem;margin-top:1.6rem;
-    font:500 .85rem/1.3 var(--mono);color:var(--muted)}
-  .tm-pill{display:inline-flex;align-items:center;gap:.55rem;padding:.45rem .85rem;border-radius:999px;
-    border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);font-weight:600;
-    letter-spacing:.06em;text-transform:uppercase}
-  .tm-pill .ic{width:10px;height:10px;border-radius:50%;background:var(--faint);flex:none}
-  .tm-pill[data-state="live"] .ic{background:var(--good);box-shadow:0 0 0 3px rgba(21,128,61,.18)}
-  .tm-pill[data-state="live"]{border-color:rgba(21,128,61,.45)}
-  .tm-pill[data-state="stale"] .ic,.tm-pill[data-state="waiting"] .ic{background:var(--warn)}
-  .tm-pill[data-state="offline"] .ic,.tm-pill[data-state="error"] .ic{background:var(--bad)}
-  @media (prefers-reduced-motion:no-preference){
-    .tm-pill[data-state="live"] .ic{animation:tm-pulse 1.6s ease-in-out infinite}
-    @keyframes tm-pulse{50%{box-shadow:0 0 0 6px rgba(21,128,61,0)}}
-  }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  .tm-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(150px,100%),1fr));gap:1rem;margin-block:1.5rem 2.5rem}
-  .tm-tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:1rem 1.1rem}
-  .tm-tile .lbl{font:600 .7rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
-  .tm-tile .val{font:600 1.9rem/1.15 var(--body);color:var(--ink);margin-top:.55rem;white-space:nowrap}
-  .tm-tile .val small{font-size:.95rem;font-weight:500;color:var(--muted);margin-left:.2rem}
-  .tm-tile .sub{font:.8rem/1.35 var(--mono);color:var(--muted);margin-top:.35rem;font-variant-numeric:tabular-nums}
-  .tm-tile.is-stale .val{color:var(--faint)}
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2b2f33;
+            color: var(--label-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
 
-  .tm-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr));gap:1.25rem}
-  .tm-card{background:var(--void);border:1px solid var(--line);border-radius:8px;padding:1rem 1.1rem .75rem;position:relative;min-width:0}
-  .tm-card.wide{grid-column:1/-1}
-  .tm-card h2{font:600 .95rem/1.3 var(--body);color:var(--ink)}
-  .tm-card .unit{font:.78rem var(--mono);color:var(--faint);margin-top:.15rem}
-  .tm-legend{display:flex;gap:1.1rem;margin-top:.5rem;font:.8rem var(--mono);color:var(--muted)}
-  .tm-legend span{display:inline-flex;align-items:center;gap:.4rem}
-  .tm-legend i{width:16px;height:2px;border-radius:1px;display:inline-block}
-  .tm-plot{position:relative;height:190px;margin-top:.4rem;touch-action:pan-y}
-  .tm-card.wide .tm-plot{height:220px}
-  .tm-plot svg{width:100%;height:100%;overflow:visible}
-  .tm-plot .grid line{stroke:var(--line);stroke-width:1}
-  .tm-plot .axis text{fill:var(--faint);font:11px var(--mono);font-variant-numeric:tabular-nums}
-  .tm-plot .ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-  .tm-plot .xh{stroke:var(--faint);stroke-width:1}
-  .tm-plot .dot{stroke:var(--void);stroke-width:2}
-  .tm-empty[hidden]{display:none}
-  .tm-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    font:.85rem var(--mono);color:var(--faint);pointer-events:none}
-  .tm-tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;border-radius:6px;
-    padding:.45rem .6rem;font:.78rem/1.45 var(--mono);white-space:nowrap;z-index:5;transform:translate(-50%,-100%);
-    box-shadow:0 4px 14px rgba(15,23,42,.25)}
-  .tm-tip b{font-weight:700}
-  .tm-tip .k{display:inline-block;width:12px;height:2px;margin-right:.4rem;vertical-align:middle}
-  .tm-tip .t{color:#CBD5E1}
+        .console {
+            background-color: var(--panel-bg);
+            border-top: 4px solid var(--panel-border-light);
+            border-left: 4px solid var(--panel-border-light);
+            border-bottom: 5px solid var(--panel-border-dark);
+            border-right: 5px solid var(--panel-border-dark);
+            padding: 30px;
+            box-shadow: 10px 10px 30px rgba(0,0,0,0.8);
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1.5fr;
+            gap: 25px;
+        }
 
-  .tm-section{margin-top:3rem}
-  .tm-section h2.sec{font-size:1.45rem;color:var(--ink);margin-bottom:.4rem}
-  .tm-section p.note{color:var(--muted);font-size:.95rem;margin-bottom:1rem;max-width:70ch}
-  .tm-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
-  .tm-table{width:100%;border-collapse:collapse;font:.85rem/1.4 var(--mono);font-variant-numeric:tabular-nums;min-width:44rem}
-  .tm-table th{text-align:right;font-weight:600;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
-    background:var(--panel);padding:.6rem .7rem;border-bottom:1px solid var(--line)}
-  .tm-table td{text-align:right;padding:.45rem .7rem;border-bottom:1px solid var(--line);color:var(--ink)}
-  .tm-table th:first-child,.tm-table td:first-child,.tm-table th:nth-child(2),.tm-table td:nth-child(2){text-align:left}
-  .tm-table tr:last-child td{border-bottom:none}
-  .tm-raw{margin-top:.8rem;font:.8rem/1.5 var(--mono);color:var(--muted);word-break:break-all}
-  .tm-raw code{color:var(--ink)}
+        .plate {
+            grid-column: 1 / -1;
+            background-color: #d1d5d8;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-bottom: 2px solid #888;
+            border-right: 2px solid #888;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
 
-  .tm-chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:.5rem;margin-top:1rem}
-  .tm-chain .n{flex:1 1 150px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.8rem .9rem}
-  .tm-chain .n b{display:block;font:600 .9rem var(--body);color:var(--ink)}
-  .tm-chain .n span{font:.78rem/1.4 var(--mono);color:var(--muted)}
-  .tm-chain .ar{align-self:center;color:var(--faint);font:1.1rem var(--mono)}
-  @media (max-width:640px){.tm-chain .ar{display:none}}
-  .tm-foot{margin-block:3rem 4rem;font-size:.85rem;color:var(--faint);max-width:70ch}
-</style>
+        .title { font-family: 'Arial Black', Impact, sans-serif; font-size: 28px; letter-spacing: 2px; color: #111; }
+        .subtitle { font-family: 'Arial', sans-serif; font-weight: bold; font-size: 14px; letter-spacing: 1px; color: #444; margin-top: 5px; }
+        .isro-logo { font-family: 'Arial Black', Impact, sans-serif; color: #0033a0; font-size: 32px; letter-spacing: 4px; }
+
+        .sub-panel {
+            border-top: 2px solid var(--panel-border-dark);
+            border-left: 2px solid var(--panel-border-dark);
+            border-bottom: 2px solid var(--panel-border-light);
+            border-right: 2px solid var(--panel-border-light);
+            padding: 20px;
+            position: relative;
+        }
+
+        .panel-label {
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: var(--panel-bg);
+            padding: 0 10px;
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 1px;
+            color: #333;
+        }
+
+        .crt-screen {
+            background-color: var(--crt-bg);
+            border: 8px solid #222;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'VT323', 'Courier New', monospace;
+            color: var(--crt-green);
+            box-shadow: inset 0 0 15px rgba(0,0,0,1);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .crt-screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 24px;
+            line-height: 1.2;
+            text-shadow: 0 0 5px var(--crt-green);
+        }
+
+        .data-label { color: var(--crt-amber); text-shadow: 0 0 5px var(--crt-amber); }
+        .alert-red { color: var(--crt-red); text-shadow: 0 0 5px var(--crt-red); animation: flash 1s infinite;}
+        
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        .indicators-row {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: #6a747e;
+            border: inset 3px #555;
+        }
+
+        .lamp-box { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .lamp-label { font-weight: bold; font-size: 12px; color: #ddd; }
+
+        .lamp {
+            width: 40px;
+            height: 20px;
+            border: 2px solid #222;
+            border-top-color: #666;
+            border-left-color: #666;
+            background-color: #400;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .lamp.green-on {
+            background-color: #3f3;
+            box-shadow: 0 0 15px #3f3, inset 2px 2px 5px rgba(255,255,255,0.7);
+        }
+        
+        .lamp.red-on {
+            background-color: #f33;
+            box-shadow: 0 0 15px #f33, inset 2px 2px 5px rgba(255,255,255,0.7);
+        }
+
+        .terminal-scroll {
+            height: 480px;
+            overflow-y: hidden;
+            font-size: 20px;
+        }
+        
+        .hex-line {
+            white-space: pre;
+            text-shadow: 0 0 4px var(--crt-green);
+        }
+
+        .meter-row { margin-bottom: 20px; }
+        .meter-bg {
+            background: #fff;
+            border: inset 2px #888;
+            height: 20px;
+            width: 100%;
+            position: relative;
+        }
+        .meter-needle {
+            width: 4px;
+            height: 24px;
+            background: red;
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transition: left 0.1s linear;
+            box-shadow: 2px 2px 2px rgba(0,0,0,0.5);
+        }
+        .meter-scale {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        /* ---- website additions: home link, phones ---- */
+        .console > * { min-width: 0; }
+        a.isro-logo { display: block; text-decoration: none; }
+        .home-link { display: block; font-family: 'VT323', 'Courier New', monospace; font-size: 16px; color: #333; text-decoration: none; letter-spacing: 1px; margin-top: 2px; }
+        a.isro-logo:hover, .home-link:hover { color: #c2500f; }
+        a:focus-visible { outline: 2px solid #c2500f; outline-offset: 3px; }
+
+        @media (max-width: 1000px) {
+            body { padding: 10px; }
+            .console { grid-template-columns: 1fr; padding: 15px; gap: 22px; }
+            .plate { padding: 12px 15px; }
+            .title { font-size: 20px; letter-spacing: 1px; }
+            .subtitle { font-size: 11px; }
+            a.isro-logo { font-size: 28px !important; }
+            .terminal-scroll { height: 360px; font-size: 17px; }
+            .hex-line { white-space: pre-wrap; word-break: break-all; }
+            #link-monitor .crt-screen { height: auto !important; }
+        }
+    </style>
 </head>
 <body>
-
-<header id="hdr" class="hdr-solid">
-  <div class="wrap nav">
-    <a class="brand" href="index.html" aria-label="KCC, Chandigarh University — home">
-      <b>KCC</b>
-      <span>CHANDIGARH UNIVERSITY</span>
-    </a>
-    <a class="btn-back" href="index.html#news">&larr; Back to Home</a>
-  </div>
-</header>
-
-<main id="top" class="tm-root">
-  <section class="tm-head">
-    <div class="wrap">
-      <p class="eyebrow">Ground station &middot; KCC-NODE-01</p>
-      <h1>Live Telemetry</h1>
-      <p>Sensor readings from a student-built test node. A Teensy&nbsp;4.1 radios its
-        temperature, humidity, light and acceleration over LoRa to an ESP32 ground
-        station, which relays every frame to this page as it arrives.</p>
-      <div class="tm-status" role="status" aria-live="polite">
-        <span class="tm-pill" id="tm-pill" data-state="connecting"><span class="ic" aria-hidden="true"></span><span id="tm-pill-text">Connecting</span></span>
-        <span id="tm-status-detail">Connecting to the relay&hellip;</span>
-      </div>
-    </div>
-  </section>
-
-  <div class="wrap">
-    <div class="tm-tiles">
-      <div class="tm-tile" data-k="temp"><div class="lbl">Temperature</div><div class="val">&mdash;</div><div class="sub">DHT11</div></div>
-      <div class="tm-tile" data-k="hum"><div class="lbl">Humidity</div><div class="val">&mdash;</div><div class="sub">DHT11</div></div>
-      <div class="tm-tile" data-k="ldr"><div class="lbl">Light level</div><div class="val">&mdash;</div><div class="sub">LDR, 12-bit ADC</div></div>
-      <div class="tm-tile" data-k="acc"><div class="lbl">Acceleration Z</div><div class="val">&mdash;</div><div class="sub">MPU6050</div></div>
-      <div class="tm-tile" data-k="rssi"><div class="lbl">Signal</div><div class="val">&mdash;</div><div class="sub">LoRa 440&nbsp;MHz, SF7</div></div>
-      <div class="tm-tile" data-k="pkts"><div class="lbl">Frames this session</div><div class="val">0</div><div class="sub">&nbsp;</div></div>
-    </div>
-
-    <div class="tm-charts">
-      <div class="tm-card wide">
-        <h2>Acceleration</h2>
-        <div class="unit">g, last 2 minutes</div>
-        <div class="tm-legend">
-          <span><i style="background:var(--series-1)"></i>X</span>
-          <span><i style="background:var(--series-2)"></i>Y</span>
-          <span><i style="background:var(--series-3)"></i>Z</span>
+    <div class="console">
+        <div class="plate">
+            <div>
+                <div class="title">CHANDIGARH UNIVERSITY</div>
+                <div class="subtitle">TELEMETRY TRACKING & COMMAND NETWORK</div>
+            </div>
+            <div style="text-align: right;">
+                <a class="isro-logo" href="index.html" style="font-size: 36px; letter-spacing: 4px;" title="Back to the KCC home page">KCC</a>
+                <a class="home-link" href="index.html">&#9664; HOME</a>
+            </div>
         </div>
-        <div class="tm-plot" id="ch-acc"></div>
-      </div>
-      <div class="tm-card"><h2>Light level</h2><div class="unit">raw ADC counts (0&ndash;4095), last 2 minutes</div><div class="tm-plot" id="ch-ldr"></div></div>
-      <div class="tm-card"><h2>Signal strength</h2><div class="unit">RSSI in dBm, last 2 minutes</div><div class="tm-plot" id="ch-rssi"></div></div>
-      <div class="tm-card"><h2>Temperature</h2><div class="unit">&deg;C, last 2 minutes</div><div class="tm-plot" id="ch-temp"></div></div>
-      <div class="tm-card"><h2>Humidity</h2><div class="unit">% relative humidity, last 2 minutes</div><div class="tm-plot" id="ch-hum"></div></div>
+
+        <div class="sub-panel">
+            <div class="panel-label">ENVIRON-SYS SEC-1</div>
+            <div class="crt-screen" style="height: 180px;">
+                <div class="data-row">
+                    <span class="data-label">SYS_TEMP:</span>
+                    <span id="val-temp">00.00</span> C
+                </div>
+                <div class="data-row">
+                    <span class="data-label">SYS_HUMD:</span>
+                    <span id="val-hum">00.00</span> %
+                </div>
+                <div class="data-row" style="margin-top: 20px;">
+                    <span class="data-label">SOLAR (LDR):</span>
+                    <span id="val-ldr">AWAITING</span>
+                </div>
+            </div>
+
+            <div class="crt-screen" style="height: 200px; padding: 5px;">
+                <canvas id="miniChart" style="width: 100%; height: 100%;"></canvas>
+            </div>
+
+            <div class="indicators-row">
+                <div class="lamp-box">
+                    <div class="lamp-label">RX CARRIER</div>
+                    <div class="lamp green-on" id="lamp-rx"></div>
+                </div>
+                <div class="lamp-box">
+                    <div class="lamp-label">PKT LOCK</div>
+                    <div class="lamp" id="lamp-lock"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sub-panel">
+            <div class="panel-label">INERTIAL MEASUREMENT UNIT</div>
+            <div style="background: #e4e7e6; padding: 20px; border: inset 3px #999;">
+                <div style="font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #aaa;">ACCELEROMETER (X,Y,Z)</div>
+                <div class="meter-row">
+                    <div class="meter-bg"><div class="meter-needle" id="ndl-ax"></div></div>
+                    <div class="meter-scale"><span>-</span><span>X</span><span>+</span></div>
+                </div>
+                <div class="meter-row">
+                    <div class="meter-bg"><div class="meter-needle" id="ndl-ay"></div></div>
+                    <div class="meter-scale"><span>-</span><span>Y</span><span>+</span></div>
+                </div>
+                <div class="meter-row">
+                    <div class="meter-bg"><div class="meter-needle" id="ndl-az"></div></div>
+                    <div class="meter-scale"><span>-</span><span>Z</span><span>+</span></div>
+                </div>
+                
+                <div style="font-weight: bold; margin-bottom: 10px; margin-top: 20px; border-bottom: 2px solid #aaa;">RADIO STATS</div>
+                <div class="data-row" style="color: black; text-shadow: none;">
+                    <span style="font-weight:bold;">RSSI:</span> <span id="val-rssi" style="color:#0033a0; font-weight:bold;">0 dBm</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sub-panel" id="link-monitor">
+            <div class="panel-label">LINK MONITOR 01</div>
+            <div class="crt-screen" style="height: 520px; margin-bottom: 0;">
+                <div style="border-bottom: 2px dashed var(--crt-dim); padding-bottom: 10px; margin-bottom: 10px;">
+                    <div class="data-row" style="font-size:18px;">
+                        <span class="data-label">FRAMES RX:</span> <span id="val-pkt">00000</span>
+                    </div>
+                    <div class="data-row" style="font-size:18px;" role="status" aria-live="polite">
+                        <span class="data-label">UPLINK:</span> <span id="val-link">CONNECTING</span>
+                    </div>
+                </div>
+                <div class="terminal-scroll" id="terminal">
+                    <div class="hex-line standby" style="text-align: center; margin-top: 20px;">* STANDBY FOR TELEMETRY *</div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="tm-section">
-      <h2 class="sec">Recent frames</h2>
-      <p class="note">The last 12 frames, newest first. A gap in the sequence number means a packet was lost on the radio link.</p>
-      <div class="tm-table-wrap">
-        <table class="tm-table">
-          <thead><tr><th scope="col">Seq</th><th scope="col">Received</th><th scope="col">Temp &deg;C</th><th scope="col">Hum %</th><th scope="col">Light</th><th scope="col">X g</th><th scope="col">Y g</th><th scope="col">Z g</th><th scope="col">RSSI</th><th scope="col">SNR</th></tr></thead>
-          <tbody id="tm-rows"><tr><td colspan="10" style="text-align:center;color:var(--faint)">No frames yet</td></tr></tbody>
-        </table>
-      </div>
-      <p class="tm-raw">Last raw packet: <code id="tm-raw">&mdash;</code></p>
-    </div>
-
-    <div class="tm-section">
-      <h2 class="sec">How the data gets here</h2>
-      <div class="tm-chain">
-        <div class="n"><b>Teensy 4.1 node</b><span>DHT11, LDR and MPU6050 sampled four times a second</span></div>
-        <div class="ar" aria-hidden="true">&rarr;</div>
-        <div class="n"><b>LoRa radio link</b><span>SX1278 at 440&nbsp;MHz, SF7, 125&nbsp;kHz, CRC on</span></div>
-        <div class="ar" aria-hidden="true">&rarr;</div>
-        <div class="n"><b>ESP32 ground station</b><span>Decodes each frame and publishes it over Wi-Fi</span></div>
-        <div class="ar" aria-hidden="true">&rarr;</div>
-        <div class="n"><b>MQTT relay</b><span>Pushed to this page over a secure WebSocket</span></div>
-      </div>
-    </div>
-
-    <p class="tm-foot">Frames travel through a public MQTT broker, so treat these readings as a live
-      demonstration rather than calibrated measurements. When the node is powered down the page
-      shows the last frame it received and how long ago that was.</p>
-  </div>
-</main>
-
-<script src="https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js"></script>
-<script src="assets/js/telemetry.js?v=1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js"></script>
+    <script src="assets/js/telemetry.js?v=2"></script>
 </body>
 </html>
