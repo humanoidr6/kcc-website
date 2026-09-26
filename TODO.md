@@ -16,6 +16,14 @@ a light "ISRO-blue" theme; day-to-day planning notes from the Windows sessions l
       testing recipe section remains valid.
 - [ ] Custom domain (e.g. a `cuchd.in` subdomain) — CNAME file + Pages settings.
 - [ ] Hindi / Punjabi language toggle (long-standing wish-list item).
+- [ ] **Live telemetry page** (`telemetry.html`, added 26 Sep 2026) relays through the
+      *public* HiveMQ broker, topic `kcc-cu/node01-29e8ea47/#` — anyone who learns the topic
+      can publish fake frames (the page range-checks and never renders them as HTML). If that
+      matters, move to a private broker (HiveMQ Cloud / EMQX free tier) with a publish-only
+      login on the ESP32 and a subscribe-only login in `assets/js/telemetry.js`.
+      Firmware: `~/ESP32_LoRa_Receiver`, `~/kcc-mission-control/Teensy_Node_Firmware`;
+      test without hardware: `~/kcc-mission-control/lora_scripts/fake_ground_station.py`
+      or open `telemetry.html?demo`.
 
 ## Done
 
