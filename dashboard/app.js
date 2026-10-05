@@ -1,8 +1,9 @@
 // KCC ground-station dashboard: UI from github.com/mahamatkher/6U_Dashboard,
 // fed live from the same public MQTT broker and topics as telemetry.html.
 //
-//   1U · KCC-NODE-01  kcc-cu/node01-29e8ea47/{telemetry,status}   DHT11, LDR, MPU6050 (via the ESP32)
+//   1U · KCC-NODE-01  kcc-cu/node01-29e8ea47/{telemetry,status}   DHT11, LDR, MPU6050 (via the ESP32); no camera
 //   6U · KCC-NODE-06  kcc-cu/cam01-040d37e7/{frame,stats,status}  OV7670 camera (via the same ESP32)
+//   Neither craft carries GPS, so there is no tracking card.
 //                     6U sensors/power are planned and show as "awaiting" until they exist.
 //
 // Only real data is shown: sensors a craft doesn't carry say "not fitted" rather than
@@ -19,7 +20,6 @@ const TOPIC_CAM         = 'kcc-cu/cam01-040d37e7';    // must match the ESP32 gr
 const STALE_AFTER_MS    = 5000;    // no data for this long -> "Link lost"
 const STABLE_RATE_DEG_S = 5;       // angular rate (deg/s) below which attitude is "STABLE"
 const SPARK_POINTS      = 30;
-const GROUND_STATION    = { lat: 30.7688, lon: 76.5754 };   // KCC, Chandigarh University (approx.)
 const FRAME_W = 160, FRAME_H = 120, FRAME_BYTES = FRAME_W * FRAME_H / 2;
 const DEMO = /[?&]demo\b/.test(location.search);
 
@@ -214,46 +214,6 @@ for (let i = 0; i < 12; i++) {
 const cube = $('satellite-cube');
 
 // ==========================================
-// MAP (Leaflet): neither craft has GPS, so it marks the ground station that hears them
-// ==========================================
-const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([GROUND_STATION.lat, GROUND_STATION.lon], 15);
-L.control.zoom({ position: 'bottomright' }).addTo(map);
-// OpenStreetMap's tile policy requires visible attribution
-L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    className: 'map-tiles',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-}).addTo(map);
-
-const craftIcon = L.divIcon({
-    className: '',
-    html: '<div class="craft-icon"><div class="craft-ping"></div><div class="craft-dot"></div></div>',
-    iconSize: [48, 48],
-    iconAnchor: [24, 24]
-});
-L.marker([GROUND_STATION.lat, GROUND_STATION.lon], { icon: craftIcon, keyboard: false, title: 'KCC ground station' })
-    .addTo(map)
-    .bindTooltip('KCC ground station · both crafts are received here');
-
-const recenterBtn = $('recenter-btn');
-map.on('dragstart', () => { recenterBtn.hidden = false; });
-recenterBtn.addEventListener('click', () => {
-    map.setView([GROUND_STATION.lat, GROUND_STATION.lon], 15);
-    recenterBtn.hidden = true;
-});
-recenterBtn.lastChild.textContent = 'Ground station';
-new ResizeObserver(() => map.invalidateSize()).observe($('map'));
-
-(function showGroundStationChips() {
-    const box = $('coord-display');
-    box.textContent = '';
-    const chip = (t) => { const s = document.createElement('span'); s.className = 'coord-chip'; s.textContent = t; box.appendChild(s); };
-    chip(`GS ${GROUND_STATION.lat.toFixed(4)}°N ${GROUND_STATION.lon.toFixed(4)}°E`);
-    chip('No GPS on board');
-})();
-
-// ==========================================
 // CAMERA (6U optical feed)
 // ==========================================
 const camCanvas = $('cam-canvas');
@@ -341,6 +301,7 @@ function renderValues() {
 }
 
 const feedBg = document.querySelector('.feed-bg');
+const opticalCard = document.querySelector('.c-optical');
 
 function renderCamera() {
     const c = crafts[current];
@@ -348,12 +309,13 @@ function renderCamera() {
     // The template's stock Earth photo would pass for a real picture, so it never shows;
     // the feed is black unless a real frame is on screen.
     feedBg.hidden = true;
-    if (!c.hasCamera) {
-        camCanvas.hidden = true;
-        badge.classList.add('is-offline');
-        setText('cam-label', 'NO CAMERA ON 1U');
-        return;
+    // Crafts without a camera (the 1U) don't get an Optical Feed card at all.
+    if (opticalCard.hidden === c.hasCamera) {
+        if (!c.hasCamera && opticalCard.classList.contains('is-fs')) exitFullscreen();
+        opticalCard.hidden = !c.hasCamera;
+        document.body.classList.toggle('no-camera', !c.hasCamera);
     }
+    if (!c.hasCamera) return;
     const cam = c.cam;
     const live = Date.now() - cam.lastFrameAt < STALE_AFTER_MS;
     camCanvas.hidden = !cam.frame;

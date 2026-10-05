@@ -92,7 +92,7 @@ header.scrolled{background:var(--signal);box-shadow:0 4px 12px rgba(0,0,0,0.15);
 .nav-links{display:flex;align-items:center;gap:1.6rem;list-style:none;margin:0;padding:0}
 .nav-links a{
   font:600 1.05rem var(--mono);letter-spacing:.14em;text-transform:uppercase;
-  color:#E2E8F0;text-decoration:none;transition:color .2s;
+  color:#E2E8F0;text-decoration:none;transition:color .2s;white-space:nowrap;
 }
 .nav-links a:hover{color:#FFFFFF}
 .nav-cta{
@@ -364,7 +364,9 @@ footer .foot-links a:hover { color: #FFF; }
 }
 
 /* ============ RESPONSIVE ============ */
-@media (max-width:1000px){
+/* The menu collapses a little before the page layout does: with four links the
+   desktop nav needs ~1100px, and below that the "Join the mission" button overflowed. */
+@media (max-width:1100px){
   .nav-links{display:none}
   .burger{display:flex}
   body.nav-open .nav-links{
@@ -373,6 +375,8 @@ footer .foot-links a:hover { color: #FFF; }
   }
   body.nav-open .nav-links a{display:block;padding:.85rem var(--pad);font-size:.78rem;color:var(--ink)}
   body.nav-open .nav-links a:hover{color:var(--saffron)}
+}
+@media (max-width:1000px){
   .orbit-box svg{width:min(88vw,430px)}
   .about-grid,.cusat-grid,.gs-grid{grid-template-columns:1fr}
   .factcard{position:static}
