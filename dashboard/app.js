@@ -3,7 +3,8 @@
 //
 //   1U · KCC-NODE-01  kcc-cu/node01-29e8ea47/{telemetry,status}   DHT11, LDR, MPU6050 (via the ESP32); no camera
 //   6U · KCC-NODE-06  kcc-cu/cam01-040d37e7/{frame,stats,status}  OV7670 camera (via the same ESP32)
-//   6U · KCC-NODE-06  kcc-cu/node06-48de3288/telemetry            DHT11, light, MPU-9250, BMP280 (via the ESP32)
+//   6U · KCC-NODE-06  kcc-cu/node06-48de3288/telemetry            MPU-9250 attitude (via the ESP32); the 6U carries
+//                                                                 no env sensors, so its card shows the 1U's temp/humidity/light
 //                     kcc-cu/node06-48de3288/cmd                  signed motor commands (6U motor node not built yet)
 //                     kcc-cu/node06-48de3288/motors               motor readback, when the 6U node exists
 //   Neither craft carries GPS, so there is no tracking card. The 6U solar reading is
@@ -110,7 +111,7 @@ const crafts = {
         hasCamera: false,
         cards: { power: false, motors: false },
         pressureTile: false,
-        fitted: { tempInt: true, tempExt: false, pressure: false, humidity: true, light: true, attitude: true, power: false, solar: false },
+        fitted: { tempExt: true, pressure: false, humidity: true, light: true, attitude: true, power: false, solar: false },
         lastDataAt: null,       // local ms of the newest live message
         lastSeenTs: 0,          // epoch ms of the newest message, live or retained
         values: {},
@@ -124,10 +125,12 @@ const crafts = {
         cards: { power: true, motors: true },
         pressureTile: true,
         simulatedSolar: true,     // no panel fitted: 16–19 V, captioned "simulated"
-        // DHT11 (temp/humidity), light module, BMP280 (pressure), MPU-9250 (attitude).
-        fitted: { tempInt: true, tempExt: false, pressure: true, humidity: true, light: true, attitude: true, power: false, solar: false },
-        pending: true,            // until the first 6U sensor packet arrives
-        notResponding: { pressure: 'BMP280 not responding', attitude: 'MPU-9250 not responding' },
+        // The 6U carries only the MPU-9250 (attitude). By request its temperature, humidity and
+        // light show the 1U's readings (labelled "from 1U"); there is no pressure sensor.
+        mirrorEnv: '1u',
+        fitted: { tempExt: true, pressure: false, humidity: true, light: true, attitude: true, power: false, solar: false },
+        pending: true,            // until the first 6U packet arrives (attitude only)
+        notResponding: { attitude: 'MPU-9250 not responding' },
         lastDataAt: null,
         lastSeenTs: 0,
         values: {},
@@ -205,8 +208,10 @@ function pushHistory(craft, key, value) {
 }
 
 function showHistory(craft) {
+    const envSrc = craft.mirrorEnv ? crafts[craft.mirrorEnv] : craft;
     for (const key of Object.keys(charts)) {
-        charts[key].data.datasets[0].data = craft.hist[key].slice();
+        const src = key === 'pres' ? craft : envSrc;
+        charts[key].data.datasets[0].data = src.hist[key].slice();
         charts[key].update('none');
     }
 }
@@ -254,31 +259,29 @@ function linkStateOf(craft) {
 function renderValues() {
     const c = crafts[current];
     const v = c.values;
+    const env = c.mirrorEnv ? crafts[c.mirrorEnv].values : v;   // temp/humidity/light source
     const f = c.fitted;
     const missing = c.pending ? 'Awaiting 6U sensor node' : 'Not fitted';
 
-    setText('val-temp-int', f.tempInt ? fmt(v.tempInt, 1) : '--');
-    setText('val-temp-ext', f.tempExt ? fmt(v.tempExt, 1) : '--');
+    setText('val-temp-ext', f.tempExt ? fmt(env.tempExt, 1) : '--');
     const presOk = f.pressure && v.pressure !== undefined && v.pressure !== null;
     setText('val-pres', presOk ? fmt(v.pressure, 1) : '--');
-    setText('cap-pres', presOk ? '\u00a0' : c.pending ? missing : f.pressure ? ((c.notResponding || {}).pressure || 'Awaiting data') : 'Not fitted');
-    setText('val-hum', f.humidity ? fmt(v.humidity, 1) : '--');
-    setText('val-light', f.light && v.light !== undefined && v.light !== null ? String(Math.round(v.light)) : '--');
+    setText('cap-pres', presOk ? '\u00a0' : f.pressure ? ((c.notResponding || {}).pressure || 'Awaiting data') : 'Not fitted');
+    setText('val-hum', f.humidity ? fmt(env.humidity, 1) : '--');
+    setText('val-light', f.light && env.light !== undefined && env.light !== null ? String(Math.round(env.light)) : '--');
     setText('unit-light', 'ADC');   // the LDR reports a raw 0–4095 reading, not lux
 
     const sb = $('sensor-badge');
-    if (c.pending) {
-        sb.textContent = missing;
-    } else if (!Object.keys(v).length) {
+    if (!Object.keys(env).length) {
         sb.textContent = 'Awaiting data';
     } else {
         const names = [];
-        if (v.tempInt !== undefined || v.humidity !== undefined) names.push('DHT11');
-        if (v.light !== undefined && v.light !== null) names.push('LDR');
+        if (env.tempExt !== undefined || env.humidity !== undefined) names.push('DHT11');
+        if (env.light !== undefined && env.light !== null) names.push('LDR');
         if (presOk) names.push('BMP280');
-        sb.textContent = names.join(' · ') || 'Awaiting data';
+        sb.textContent = (c.mirrorEnv ? 'From 1U: ' : '') + (names.join(' · ') || 'Awaiting data');
     }
-    sb.classList.toggle('is-warn', c.pending || !Object.keys(v).length);
+    sb.classList.toggle('is-warn', !Object.keys(env).length);
 
     // Power (6U only): the Solar Array tile; there is no battery indicator.
     renderSolar();
@@ -425,7 +428,7 @@ setInterval(renderLink, 1000);
 // ==========================================
 // DATA INJECTION
 // ==========================================
-// data uses the template's keys: tempInt, humidity, light, pitch, roll, ...
+// data uses the template's keys: tempExt, humidity, light, pitch, roll, ...
 function updateDashboardData(craftId, data, live = true, ts = 0) {
     const c = crafts[craftId];
     if (!c || !data) return;
@@ -451,9 +454,9 @@ function updateDashboardData(craftId, data, live = true, ts = 0) {
             }
         }
     }
-    if (craftId === current) {
+    if (craftId === current || crafts[current].mirrorEnv === craftId) {
         renderValues();
-        showHistory(c);
+        showHistory(crafts[current]);
         renderLink();
     }
 }
@@ -467,7 +470,7 @@ function on1U(text, retained) {
     const ax = num(d.accelx, -16, 16), ay = num(d.accely, -16, 16), az = num(d.accelz, -16, 16);
     const out = {};
     // The ESP32 reports 0.00 until the DHT11 has produced a reading.
-    if (temp !== null && temp.toFixed(2) !== '0.00') out.tempInt = temp;
+    if (temp !== null && temp.toFixed(2) !== '0.00') out.tempExt = temp;
     if (hum !== null && hum.toFixed(2) !== '0.00') out.humidity = hum;
     if (ldr !== null) out.light = ldr;
     if (ax !== null && ay !== null && az !== null && (ax || ay || az)) {
@@ -483,11 +486,9 @@ function on6U(text, retained) {
     let d;
     try { d = JSON.parse(text); } catch (e) { return; }
     if (!d || typeof d !== 'object') return;
-    const temp = num(d.temp, -40, 85), hum = num(d.hum, 0, 100), ldr = num(d.ldr, 0, 4095);
-    const ax = num(d.ax, -16, 16), ay = num(d.ay, -16, 16), az = num(d.az, -16, 16), hpa = num(d.pres, 300, 1100);
-    const out = { light: ldr, pressure: hpa === null ? null : hpa / 10 };   // the tile shows kPa
-    if (temp !== null) out.tempInt = temp;
-    if (hum !== null) out.humidity = hum;
+    // The 6U now carries only the IMU; its temp/humidity/light come from the 1U (mirrorEnv).
+    const ax = num(d.ax, -16, 16), ay = num(d.ay, -16, 16), az = num(d.az, -16, 16);
+    const out = {};
     if (ax !== null && ay !== null && az !== null) {
         out.pitch = deg(Math.atan2(-ax, Math.sqrt(ay * ay + az * az)));
         out.roll = deg(Math.atan2(ay, az));
