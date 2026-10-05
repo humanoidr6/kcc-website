@@ -3,7 +3,8 @@
 //
 //   1U · KCC-NODE-01  kcc-cu/node01-29e8ea47/{telemetry,status}   DHT11, LDR, MPU6050 (via the ESP32); no camera
 //   6U · KCC-NODE-06  kcc-cu/cam01-040d37e7/{frame,stats,status}  OV7670 camera (via the same ESP32)
-//   6U · KCC-NODE-06  kcc-cu/node06-48de3288/cmd                  signed motor commands (6U motor node not built yet)
+//   6U · KCC-NODE-06  kcc-cu/node06-48de3288/telemetry            DHT11, light, MPU-9250, BMP280 (via the ESP32)
+//                     kcc-cu/node06-48de3288/cmd                  signed motor commands (6U motor node not built yet)
 //                     kcc-cu/node06-48de3288/motors               motor readback, when the 6U node exists
 //   Neither craft carries GPS, so there is no tracking card. The 6U solar reading is
 //   simulated (16–19 V) by request, because no panel is fitted; it is captioned as such.
@@ -34,7 +35,7 @@ const $ = (id) => document.getElementById(id);
 const random = (min, max) => Math.random() * (max - min) + min;
 const normAngle = (a) => ((a + 180) % 360 + 360) % 360 - 180;
 const setText = (id, text) => { const el = $(id); if (el) el.textContent = text; };
-const num = (v, lo, hi) => { v = Number(v); return Number.isFinite(v) && v >= lo && v <= hi ? v : null; };
+const num = (v, lo, hi) => { if (v === null || v === undefined || v === '') return null; v = Number(v); return Number.isFinite(v) && v >= lo && v <= hi ? v : null; };   // Number(null) is 0
 const fmt = (v, d) => (v === null || v === undefined ? '--' : v.toFixed(d));
 const deg = (r) => r * 180 / Math.PI;
 
@@ -123,9 +124,10 @@ const crafts = {
         cards: { power: true, motors: true },
         pressureTile: true,
         simulatedSolar: true,     // no panel fitted: 16–19 V, captioned "simulated"
-        // The 6U sensor/power node is planned (see teensy-lora-video docs/HANDOVER.md, section 2).
-        fitted: { tempInt: false, tempExt: false, pressure: false, humidity: false, light: false, attitude: false, power: false, solar: false },
-        pending: true,
+        // DHT11 (temp/humidity), light module, BMP280 (pressure), MPU-9250 (attitude).
+        fitted: { tempInt: true, tempExt: false, pressure: true, humidity: true, light: true, attitude: true, power: false, solar: false },
+        pending: true,            // until the first 6U sensor packet arrives
+        notResponding: { pressure: 'BMP280 not responding', attitude: 'MPU-9250 not responding' },
         lastDataAt: null,
         lastSeenTs: 0,
         values: {},
@@ -257,16 +259,26 @@ function renderValues() {
 
     setText('val-temp-int', f.tempInt ? fmt(v.tempInt, 1) : '--');
     setText('val-temp-ext', f.tempExt ? fmt(v.tempExt, 1) : '--');
-    setText('val-pres', f.pressure ? fmt(v.pressure, 1) : '--');
-    setText('cap-pres', f.pressure ? ' ' : missing);
+    const presOk = f.pressure && v.pressure !== undefined && v.pressure !== null;
+    setText('val-pres', presOk ? fmt(v.pressure, 1) : '--');
+    setText('cap-pres', presOk ? '\u00a0' : c.pending ? missing : f.pressure ? ((c.notResponding || {}).pressure || 'Awaiting data') : 'Not fitted');
     setText('val-hum', f.humidity ? fmt(v.humidity, 1) : '--');
     setText('val-light', f.light && v.light !== undefined && v.light !== null ? String(Math.round(v.light)) : '--');
     setText('unit-light', 'ADC');   // the LDR reports a raw 0–4095 reading, not lux
 
-    const anyFitted = f.tempInt || f.humidity || f.light;
     const sb = $('sensor-badge');
-    sb.textContent = anyFitted ? (Object.keys(v).length ? 'DHT11 · LDR' : 'Awaiting data') : missing;
-    sb.classList.toggle('is-warn', !anyFitted);
+    if (c.pending) {
+        sb.textContent = missing;
+    } else if (!Object.keys(v).length) {
+        sb.textContent = 'Awaiting data';
+    } else {
+        const names = [];
+        if (v.tempInt !== undefined || v.humidity !== undefined) names.push('DHT11');
+        if (v.light !== undefined && v.light !== null) names.push('LDR');
+        if (presOk) names.push('BMP280');
+        sb.textContent = names.join(' · ') || 'Awaiting data';
+    }
+    sb.classList.toggle('is-warn', c.pending || !Object.keys(v).length);
 
     // Power (6U only): the Solar Array tile; there is no battery indicator.
     renderSolar();
@@ -283,8 +295,12 @@ function renderValues() {
     }
     setText('val-yaw', '--');
     const ob = $('orient-badge');
-    ob.textContent = f.attitude ? c.badge : missing;
-    ob.classList.toggle('is-warn', !f.attitude || c.badge !== 'Stable');
+    const attOk = f.attitude && v.pitch !== undefined && v.pitch !== null;
+    ob.textContent = c.pending ? missing
+                   : attOk ? c.badge
+                   : f.attitude && Object.keys(v).length ? ((c.notResponding || {}).attitude || 'Awaiting data')
+                   : f.attitude ? 'Awaiting data' : 'Not fitted';
+    ob.classList.toggle('is-warn', !attOk || c.badge !== 'Stable');
 }
 
 // Solar: no panel is fitted on the 6U; by request it shows a simulated 16–19 V output.
@@ -461,6 +477,28 @@ function on1U(text, retained) {
     updateDashboardData('1u', out, !retained, num(d.ts, 0, 1e14) || 0);
 }
 
+// 6U JSON from the ESP32: {"temp","hum","ldr","ax","ay","az","pres"(hPa),"rssi","pkts","via","ts"};
+// null = that sensor isn't responding.
+function on6U(text, retained) {
+    let d;
+    try { d = JSON.parse(text); } catch (e) { return; }
+    if (!d || typeof d !== 'object') return;
+    const temp = num(d.temp, -40, 85), hum = num(d.hum, 0, 100), ldr = num(d.ldr, 0, 4095);
+    const ax = num(d.ax, -16, 16), ay = num(d.ay, -16, 16), az = num(d.az, -16, 16), hpa = num(d.pres, 300, 1100);
+    const out = { light: ldr, pressure: hpa === null ? null : hpa / 10 };   // the tile shows kPa
+    if (temp !== null) out.tempInt = temp;
+    if (hum !== null) out.humidity = hum;
+    if (ax !== null && ay !== null && az !== null) {
+        out.pitch = deg(Math.atan2(-ax, Math.sqrt(ay * ay + az * az)));
+        out.roll = deg(Math.atan2(ay, az));
+    } else {
+        out.pitch = null;
+        out.roll = null;
+    }
+    crafts['6u'].pending = false;
+    updateDashboardData('6u', out, !retained, num(d.ts, 0, 1e14) || 0);
+}
+
 function onCamFrame(payload, retained) {
     if (!payload || payload.length !== 4 + FRAME_BYTES) return;
     if (payload[0] !== 0x4B || payload[1] !== 0x43 || payload[2] !== 0x56 || payload[3] !== 0x31) return;   // "KCV1"
@@ -502,7 +540,7 @@ function connectRelay() {
     });
     client.on('connect', () => {
         relay = 'connected';
-        client.subscribe([TOPIC_1U + '/#', TOPIC_CAM + '/#', TOPIC_6U + '/motors'], { qos: 0 });
+        client.subscribe([TOPIC_1U + '/#', TOPIC_CAM + '/#', TOPIC_6U + '/motors', TOPIC_6U + '/telemetry'], { qos: 0 });
         renderLink();
     });
     client.on('error', () => { relay = 'error'; renderLink(); });
@@ -513,6 +551,7 @@ function connectRelay() {
         else if (topic === TOPIC_CAM + '/frame') onCamFrame(payload, retained);
         else if (topic === TOPIC_CAM + '/stats') onCamStats(payload.toString());
         else if (topic === TOPIC_6U + '/motors') onMotorReadback(payload.toString(), retained);
+        else if (topic === TOPIC_6U + '/telemetry') on6U(payload.toString(), retained);
         else if (topic === TOPIC_CAM + '/status') {
             const s = payload.toString();
             if (s === 'online' || s === 'offline') { crafts['6u'].cam.status = s; renderLink(); }
