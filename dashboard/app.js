@@ -464,6 +464,30 @@ function updateDashboardData(craftId, data, live = true, ts = 0) {
     }
 }
 
+// ---- 1U mounting calibration --------------------------------------------------------
+// The 1U's IMU sits upside down and slightly tilted in the node: at rest (measured on
+// 5 Oct 2026, 40 samples) the accelerometer reads this gravity vector. The dashboard
+// rotates every 1U reading so this rest position shows as level with FRONT facing the
+// viewer. Yaw is integrated about the IMU's own Z axis, which points down here, so its
+// sign flips. Re-measure these numbers if the IMU is remounted. The 6U needs no calibration.
+const CAL_1U_REST_G = [0.120, -0.024, -0.926];
+const CAL_1U = (() => {
+    const n = Math.hypot(...CAL_1U_REST_G);
+    const g = CAL_1U_REST_G.map((x) => x / n);
+    // Rodrigues rotation taking g onto +Z: axis v = g x z, cos = g . z
+    const v = [g[1], -g[0], 0], c = g[2], k = 1 / (1 + c);
+    const R = [
+        [1 - k * v[1] * v[1], k * v[0] * v[1], v[1]],
+        [k * v[0] * v[1], 1 - k * v[0] * v[0], -v[0]],
+        [-v[1], v[0], c]
+    ];
+    if (Math.abs(1 + c) < 1e-6) return { R: [[1, 0, 0], [0, -1, 0], [0, 0, -1]], yawSign: -1 };   // exactly inverted
+    return { R, yawSign: g[2] < 0 ? -1 : 1 };
+})();
+function rotate(R, a) {
+    return [0, 1, 2].map((i) => R[i][0] * a[0] + R[i][1] * a[1] + R[i][2] * a[2]);
+}
+
 // 1U JSON from the ESP32 (same shape telemetry.js reads)
 function on1U(text, retained) {
     let d;
@@ -477,10 +501,12 @@ function on1U(text, retained) {
     if (hum !== null && hum.toFixed(2) !== '0.00') out.humidity = hum;
     if (ldr !== null) out.light = ldr;
     if (ax !== null && ay !== null && az !== null && (ax || ay || az)) {
-        out.pitch = deg(Math.atan2(-ax, Math.sqrt(ay * ay + az * az)));
-        out.roll = deg(Math.atan2(ay, az));
+        const [cx, cy, cz] = rotate(CAL_1U.R, [ax, ay, az]);   // mounting calibration
+        out.pitch = deg(Math.atan2(-cx, Math.sqrt(cy * cy + cz * cz)));
+        out.roll = deg(Math.atan2(cy, cz));
     }
-    out.yaw = num(d.yaw, -360, 360);   // gyro-integrated on the 1U, relative to its power-up heading
+    const yaw = num(d.yaw, -360, 360);   // gyro-integrated on the 1U, relative to its power-up heading
+    out.yaw = yaw === null ? null : CAL_1U.yawSign * yaw;
     updateDashboardData('1u', out, !retained, num(d.ts, 0, 1e14) || 0);
 }
 
