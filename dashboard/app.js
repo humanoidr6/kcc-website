@@ -244,18 +244,6 @@ function drawFrame(bytes, offset) {
 // ==========================================
 // RENDERING
 // ==========================================
-function setBattery(pct) {
-    const p = Math.max(0, Math.min(100, pct));
-    $('val-batt').textContent = `${Math.round(p)}%`;
-    const bar = $('batt-bar');
-    bar.style.width = `${p}%`;
-    bar.classList.toggle('is-warn', p < 40 && p >= 20);
-    bar.classList.toggle('is-bad', p < 20);
-    $('batt-track').setAttribute('aria-valuenow', Math.round(p));
-    // text cue so state is not conveyed by colour alone
-    setText('batt-state', p < 20 ? 'Critical' : p < 40 ? 'Low' : 'Nominal');
-}
-
 function linkStateOf(craft) {
     if (craft.lastDataAt === null) return 'waiting';
     return Date.now() - craft.lastDataAt > STALE_AFTER_MS ? 'lost' : 'active';
@@ -280,11 +268,7 @@ function renderValues() {
     sb.textContent = anyFitted ? (Object.keys(v).length ? 'DHT11 · LDR' : 'Awaiting data') : missing;
     sb.classList.toggle('is-warn', !anyFitted);
 
-    // Power (6U only): battery voltage when the 6U node reports it; no percentage indicator.
-    setText('val-batt-v', f.power ? `${fmt(v.batteryVoltage, 1)} V` : '-- V');
-    $('val-batt').hidden = true;
-    $('batt-track').hidden = true;
-    setText('batt-state', f.power ? 'Pack voltage' : c.pending ? 'Awaiting 6U power data' : 'Not fitted');
+    // Power (6U only): the Solar Array tile; there is no battery indicator.
     renderSolar();
 
     // Attitude: pitch/roll from the accelerometer; yaw needs a gyro/magnetometer
@@ -539,12 +523,18 @@ function connectRelay() {
 // ==========================================
 // MOTOR CONTROL (6U, 4 BLDC motors via ESCs)
 // ==========================================
-// The site and broker are public, so commands are signed: key = SHA-256(passphrase),
+// The site and broker are public, so commands are signed: key = SHA-256(password),
 // message = {"c": <command JSON string>, "s": <hex HMAC-SHA256(key, c)>}, where c is
 // {"seq":n,"ts":ms,"arm":bool,"stop":bool,"t":[m1,m2,m3,m4]} with throttles 0–100 %.
 // seq strictly increases. While armed the page repeats the command every 500 ms; the 6U
 // must stop all motors if it hears nothing valid for 1.5 s (closed tab, lost link).
-// The passphrase is never stored or sent. See teensy-lora-video docs/HANDOVER.md 2.3.
+// The password is never stored or sent. The page only keeps a salted PBKDF2 hash to say
+// "wrong password" early; the 6U checks the HMAC itself. See teensy-lora-video docs/HANDOVER.md 2.3.
+const PASS_CHECK = {
+    salt: 'c6653ae14806f75e9e18b45f7b7d6ce3',
+    iterations: 210000,
+    hash: 'd8f4708368f761288de9bd7823580ec714fa8aa5ec88de8c5903ef6401a563b0'
+};
 const MOTOR_KEEPALIVE_MS = 500;
 const motor = { key: null, armed: false, t: [0, 0, 0, 0], seq: 0, lastSendAt: 0, sending: false, nodeAt: 0, node: null };
 const sliders = [1, 2, 3, 4].map((i) => $(`m${i}`));
@@ -562,6 +552,13 @@ async function sendMotorCommand(stop = false) {
     relayClient.publish(TOPIC_6U + '/cmd', JSON.stringify({ c, s: hex(sig) }), { qos: 0, retain: false });
     motor.lastSendAt = Date.now();
     return true;
+}
+
+async function passwordMatches(pass) {
+    const base = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits']);
+    const salt = Uint8Array.from(PASS_CHECK.salt.match(/../g), (h) => parseInt(h, 16));
+    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: PASS_CHECK.iterations }, base, 256);
+    return hex(bits) === PASS_CHECK.hash;
 }
 
 let pendingSend = null;
@@ -606,7 +603,13 @@ $('motor-key-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (motor.key) { stopAll(); motor.key = null; renderMotors(); return; }   // Lock
     const pass = $('motor-pass').value;
-    if (pass.length < 8) { setText('motor-note', 'Use a passphrase of at least 8 characters.'); return; }
+    if (!(await passwordMatches(pass))) {
+        $('motor-pass').value = '';
+        setText('motor-note', 'Wrong password. The controls stay locked.');
+        return;
+    }
+    setText('motor-note', 'Unlocked. Commands are signed with the operator password and sent to the 6U uplink.' +
+        (Date.now() - motor.nodeAt < 3000 ? '' : ' The 6U motor node isn\'t connected yet, so no motor receives them.'));
     const raw = await crypto.subtle.digest('SHA-256', enc.encode(pass));
     motor.key = await crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
     $('motor-pass').value = '';
