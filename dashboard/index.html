@@ -111,9 +111,10 @@
         @media (min-width: 1280px) {
             .dash-grid { gap: 20px; grid-template-columns: repeat(12, minmax(0,1fr)); grid-template-rows: minmax(300px,1fr) minmax(340px,1fr); }
             .c-optical, .c-orient { grid-column: span 6 !important; }
-            .c-sensors { grid-column: span 8 !important; }
-            .c-power   { grid-column: span 4 !important; }
-            .no-camera .c-orient { grid-column: span 12 !important; }
+            .c-sensors { grid-column: span 5 !important; }
+            .c-power   { grid-column: span 2 !important; }
+            .c-motors  { grid-column: span 5 !important; }
+            .no-camera .c-orient, .craft-1u .c-sensors { grid-column: span 12 !important; }
         }
 
         /* ============================================================
@@ -303,7 +304,25 @@
         .craft-btn.is-lost .craft-dot-sm { background: var(--bad); }
         #cam-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
         #cam-canvas[hidden] { display: none; }
-        .card[hidden] { display: none; }
+        .card[hidden], .dash-grid [hidden] { display: none !important; }
+        @media (min-width: 768px) { .craft-1u .sensor-grid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+
+        /* Motor control (6U): built from the template's tile/chip/button styles */
+        .motor-body { display: flex; flex-direction: column; gap: 10px; padding: 0 16px 16px; flex: 1; min-height: 0; overflow: auto; }
+        .motor-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .motor-input { flex: 1; min-width: 150px; height: 44px; border-radius: 9999px; border: 1px solid var(--line); padding: 0 16px; font: 500 .875rem 'Inter', sans-serif; color: var(--ink); background: #fff; }
+        .motor-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+        @media (max-width: 479px) { .motor-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+        .motor-tile { gap: 4px; }
+        .motor-tile .metric-val { font-size: 1.3rem; }
+        .motor-readback { font-size: .75rem; color: var(--ink-2); }
+        .motor-slider { width: 100%; accent-color: var(--brand); }
+        .motor-all { display: flex; align-items: center; gap: 12px; }
+        .motor-all .metric-label { white-space: nowrap; }
+        .motor-stop { background: var(--bad); border-color: var(--bad); color: #fff; }
+        .motor-stop:hover { background: #b91c1c; border-color: #b91c1c; }
+        .motor-arm[aria-pressed="true"] { background: var(--warn); border-color: var(--warn); color: #fff; }
+        .fs-btn:disabled, .motor-slider:disabled, .motor-input:disabled { opacity: .45; cursor: not-allowed; }
         .tile .caption, .power-tile .caption { margin-top: auto; }
 
         @media (prefers-reduced-motion: reduce) {
@@ -425,7 +444,7 @@
                     </div>
                 </div>
 
-                <div class="tile">
+                <div class="tile" id="tile-pres">
                     <div class="tile-head"><span class="tile-icon"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></span><span class="metric-label">Pressure</span></div>
                     <div><span class="metric-val" id="val-pres">--</span><span class="unit">kPa</span></div>
                     <div class="spark"><canvas id="chart-pres" aria-label="Pressure trend, last 30 readings" role="img"></canvas></div>
@@ -481,8 +500,63 @@
             </div>
         </section>
 
+        <!-- MOTOR CONTROL (6U) -->
+        <section class="card c-motors" aria-labelledby="t-motors" data-fs-card>
+            <div class="card-header">
+                <h2 class="card-title" id="t-motors"><i class="fa-solid fa-fan accent" aria-hidden="true"></i>Motor Control</h2>
+                <div class="header-actions">
+                    <span id="motor-badge" class="chip is-warn" role="status">6U motor node not connected</span>
+                    <button type="button" class="fs-btn" data-fs-btn data-label="Motor Control">
+                        <span class="when-idle"><i class="fa-solid fa-expand" aria-hidden="true"></i></span>
+                        <span class="when-fs"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Back to Dashboard</span>
+                    </button>
+                </div>
+            </div>
+            <div class="motor-body">
+                <form class="motor-row" id="motor-key-form" autocomplete="off">
+                    <label class="metric-label" for="motor-pass" style="flex-basis:100%">Operator passphrase</label>
+                    <input type="password" id="motor-pass" class="motor-input" autocomplete="off" placeholder="Enter to unlock the controls">
+                    <button type="submit" class="fs-btn" id="motor-unlock">Unlock</button>
+                    <button type="button" class="fs-btn motor-arm" id="motor-arm" aria-pressed="false" disabled>Arm</button>
+                    <button type="button" class="fs-btn motor-stop" id="motor-stop">Stop all</button>
+                </form>
+                <div class="motor-grid">
+                    <div class="tile motor-tile">
+                        <div class="tile-head"><span class="tile-icon"><i class="fa-solid fa-fan" aria-hidden="true"></i></span><span class="metric-label">Motor 1</span></div>
+                        <div><span class="metric-val" id="m1-val">0</span><span class="unit">%</span></div>
+                        <input type="range" class="motor-slider" id="m1" min="0" max="100" step="1" value="0" aria-label="Motor 1 throttle" disabled>
+                        <span class="motor-readback mono" id="m1-rb">6U reports --</span>
+                    </div>
+                    <div class="tile motor-tile">
+                        <div class="tile-head"><span class="tile-icon"><i class="fa-solid fa-fan" aria-hidden="true"></i></span><span class="metric-label">Motor 2</span></div>
+                        <div><span class="metric-val" id="m2-val">0</span><span class="unit">%</span></div>
+                        <input type="range" class="motor-slider" id="m2" min="0" max="100" step="1" value="0" aria-label="Motor 2 throttle" disabled>
+                        <span class="motor-readback mono" id="m2-rb">6U reports --</span>
+                    </div>
+                    <div class="tile motor-tile">
+                        <div class="tile-head"><span class="tile-icon"><i class="fa-solid fa-fan" aria-hidden="true"></i></span><span class="metric-label">Motor 3</span></div>
+                        <div><span class="metric-val" id="m3-val">0</span><span class="unit">%</span></div>
+                        <input type="range" class="motor-slider" id="m3" min="0" max="100" step="1" value="0" aria-label="Motor 3 throttle" disabled>
+                        <span class="motor-readback mono" id="m3-rb">6U reports --</span>
+                    </div>
+                    <div class="tile motor-tile">
+                        <div class="tile-head"><span class="tile-icon"><i class="fa-solid fa-fan" aria-hidden="true"></i></span><span class="metric-label">Motor 4</span></div>
+                        <div><span class="metric-val" id="m4-val">0</span><span class="unit">%</span></div>
+                        <input type="range" class="motor-slider" id="m4" min="0" max="100" step="1" value="0" aria-label="Motor 4 throttle" disabled>
+                        <span class="motor-readback mono" id="m4-rb">6U reports --</span>
+                    </div>
+                </div>
+                <div class="motor-all">
+                    <label class="metric-label" for="m-all">All motors</label>
+                    <input type="range" class="motor-slider" id="m-all" min="0" max="100" step="1" value="0" disabled>
+                    <span class="mono" id="m-all-val">0%</span>
+                </div>
+                <p class="caption" id="motor-note">Commands are signed with the operator passphrase and sent to the 6U uplink. The 6U motor node isn't connected yet, so no motor receives them.</p>
+            </div>
+        </section>
+
     </main>
 
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
 </body>
 </html>

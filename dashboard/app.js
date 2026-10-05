@@ -3,7 +3,10 @@
 //
 //   1U · KCC-NODE-01  kcc-cu/node01-29e8ea47/{telemetry,status}   DHT11, LDR, MPU6050 (via the ESP32); no camera
 //   6U · KCC-NODE-06  kcc-cu/cam01-040d37e7/{frame,stats,status}  OV7670 camera (via the same ESP32)
-//   Neither craft carries GPS, so there is no tracking card.
+//   6U · KCC-NODE-06  kcc-cu/node06-48de3288/cmd                  signed motor commands (6U motor node not built yet)
+//                     kcc-cu/node06-48de3288/motors               motor readback, when the 6U node exists
+//   Neither craft carries GPS, so there is no tracking card. The 6U solar reading is
+//   simulated (16–19 V) by request, because no panel is fitted; it is captioned as such.
 //                     6U sensors/power are planned and show as "awaiting" until they exist.
 //
 // Only real data is shown: sensors a craft doesn't carry say "not fitted" rather than
@@ -17,6 +20,7 @@
 const BROKER_URL        = 'wss://broker.hivemq.com:8884/mqtt';
 const TOPIC_1U          = 'kcc-cu/node01-29e8ea47';   // must match the ESP32 ground station
 const TOPIC_CAM         = 'kcc-cu/cam01-040d37e7';    // must match the ESP32 ground station
+const TOPIC_6U          = 'kcc-cu/node06-48de3288';   // must match the 6U firmware / ESP32 uplink (planned)
 const STALE_AFTER_MS    = 5000;    // no data for this long -> "Link lost"
 const STABLE_RATE_DEG_S = 5;       // angular rate (deg/s) below which attitude is "STABLE"
 const SPARK_POINTS      = 30;
@@ -103,6 +107,8 @@ const crafts = {
     '1u': {
         label: '1U · KCC-NODE-01',
         hasCamera: false,
+        cards: { power: false, motors: false },
+        pressureTile: false,
         fitted: { tempInt: true, tempExt: false, pressure: false, humidity: true, light: true, attitude: true, power: false, solar: false },
         lastDataAt: null,       // local ms of the newest live message
         lastSeenTs: 0,          // epoch ms of the newest message, live or retained
@@ -114,6 +120,9 @@ const crafts = {
     '6u': {
         label: '6U · KCC-NODE-06',
         hasCamera: true,
+        cards: { power: true, motors: true },
+        pressureTile: true,
+        simulatedSolar: true,     // no panel fitted: 16–19 V, captioned "simulated"
         // The 6U sensor/power node is planned (see teensy-lora-video docs/HANDOVER.md, section 2).
         fitted: { tempInt: false, tempExt: false, pressure: false, humidity: false, light: false, attitude: false, power: false, solar: false },
         pending: true,
@@ -271,18 +280,12 @@ function renderValues() {
     sb.textContent = anyFitted ? (Object.keys(v).length ? 'DHT11 · LDR' : 'Awaiting data') : missing;
     sb.classList.toggle('is-warn', !anyFitted);
 
-    // Power: nothing fitted yet on either craft
+    // Power (6U only): battery voltage when the 6U node reports it; no percentage indicator.
     setText('val-batt-v', f.power ? `${fmt(v.batteryVoltage, 1)} V` : '-- V');
-    if (f.power && v.batteryPercent !== undefined) {
-        setBattery(v.batteryPercent);
-    } else {
-        $('val-batt').textContent = '--';
-        $('batt-bar').style.width = '0';
-        $('batt-track').setAttribute('aria-valuenow', 0);
-        setText('batt-state', c.pending ? 'Awaiting 6U power data' : 'Not fitted');
-    }
-    setText('val-solar-kw', '-- kW');
-    setText('cap-solar', 'Not fitted');
+    $('val-batt').hidden = true;
+    $('batt-track').hidden = true;
+    setText('batt-state', f.power ? 'Pack voltage' : c.pending ? 'Awaiting 6U power data' : 'Not fitted');
+    renderSolar();
 
     // Attitude: pitch/roll from the accelerometer; yaw needs a gyro/magnetometer
     if (f.attitude && v.pitch !== undefined && v.pitch !== null) {
@@ -298,6 +301,47 @@ function renderValues() {
     const ob = $('orient-badge');
     ob.textContent = f.attitude ? c.badge : missing;
     ob.classList.toggle('is-warn', !f.attitude || c.badge !== 'Stable');
+}
+
+// Solar: no panel is fitted on the 6U; by request it shows a simulated 16–19 V output.
+const solar = { volts: null, bars: Array(12).fill(0) };
+function tickSolar() {
+    solar.volts = random(16, 19);
+    solar.bars = solar.bars.map(() => random(55, 100));
+    if (crafts[current].simulatedSolar) renderSolar();
+}
+function renderSolar() {
+    const c = crafts[current];
+    const bars = Array.from(solarContainer.children);
+    if (c.simulatedSolar && solar.volts !== null) {
+        setText('val-solar-kw', `${solar.volts.toFixed(2)} V`);
+        bars.forEach((bar, i) => {
+            bar.style.height = `${solar.bars[i]}%`;
+            bar.style.backgroundColor = '#0ea5e9';
+            bar.title = `Panel ${i + 1}: simulated`;
+        });
+        setText('cap-solar', 'Simulated · no panel fitted');
+    } else {
+        setText('val-solar-kw', '-- V');
+        bars.forEach((bar) => { bar.style.height = '4%'; bar.style.backgroundColor = ''; });
+        setText('cap-solar', 'Not fitted');
+    }
+}
+setInterval(tickSolar, 1000);
+tickSolar();
+
+// Cards and tiles each craft actually has
+function renderLayout() {
+    const c = crafts[current];
+    const show = { '.c-power': c.cards.power, '.c-motors': c.cards.motors };
+    for (const [sel, on] of Object.entries(show)) {
+        const card = document.querySelector(sel);
+        if (!on && card.classList.contains('is-fs')) exitFullscreen();
+        card.hidden = !on;
+    }
+    $('tile-pres').hidden = !c.pressureTile;
+    document.body.classList.toggle('craft-1u', current === '1u');
+    document.body.classList.toggle('craft-6u', current === '6u');
 }
 
 const feedBg = document.querySelector('.feed-bg');
@@ -361,6 +405,7 @@ function renderLink() {
 }
 
 function renderAll() {
+    renderLayout();
     renderValues();
     showHistory(crafts[current]);
     if (crafts[current].hasCamera && crafts[current].cam.frame) drawFrame(crafts[current].cam.frame, 4);
@@ -462,16 +507,18 @@ function onCamStats(text) {
 // ==========================================
 // MQTT
 // ==========================================
+let relayClient = null;
+
 function connectRelay() {
     if (typeof mqtt === 'undefined') { relay = 'error'; renderLink(); return; }
-    const client = mqtt.connect(BROKER_URL, {
+    const client = relayClient = mqtt.connect(BROKER_URL, {
         clientId: 'kcc-dash-' + Math.random().toString(16).slice(2, 10),
         reconnectPeriod: 5000,
         connectTimeout: 10000
     });
     client.on('connect', () => {
         relay = 'connected';
-        client.subscribe([TOPIC_1U + '/#', TOPIC_CAM + '/#'], { qos: 0 });
+        client.subscribe([TOPIC_1U + '/#', TOPIC_CAM + '/#', TOPIC_6U + '/motors'], { qos: 0 });
         renderLink();
     });
     client.on('error', () => { relay = 'error'; renderLink(); });
@@ -481,12 +528,133 @@ function connectRelay() {
         if (topic === TOPIC_1U + '/telemetry') on1U(payload.toString(), retained);
         else if (topic === TOPIC_CAM + '/frame') onCamFrame(payload, retained);
         else if (topic === TOPIC_CAM + '/stats') onCamStats(payload.toString());
+        else if (topic === TOPIC_6U + '/motors') onMotorReadback(payload.toString(), retained);
         else if (topic === TOPIC_CAM + '/status') {
             const s = payload.toString();
             if (s === 'online' || s === 'offline') { crafts['6u'].cam.status = s; renderLink(); }
         }
     });
 }
+
+// ==========================================
+// MOTOR CONTROL (6U, 4 BLDC motors via ESCs)
+// ==========================================
+// The site and broker are public, so commands are signed: key = SHA-256(passphrase),
+// message = {"c": <command JSON string>, "s": <hex HMAC-SHA256(key, c)>}, where c is
+// {"seq":n,"ts":ms,"arm":bool,"stop":bool,"t":[m1,m2,m3,m4]} with throttles 0–100 %.
+// seq strictly increases. While armed the page repeats the command every 500 ms; the 6U
+// must stop all motors if it hears nothing valid for 1.5 s (closed tab, lost link).
+// The passphrase is never stored or sent. See teensy-lora-video docs/HANDOVER.md 2.3.
+const MOTOR_KEEPALIVE_MS = 500;
+const motor = { key: null, armed: false, t: [0, 0, 0, 0], seq: 0, lastSendAt: 0, sending: false, nodeAt: 0, node: null };
+const sliders = [1, 2, 3, 4].map((i) => $(`m${i}`));
+const allSlider = $('m-all');
+const enc = new TextEncoder();
+
+function hex(buf) { return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join(''); }
+
+async function sendMotorCommand(stop = false) {
+    if (!motor.key || !relayClient || !relayClient.connected) return false;
+    const ts = Date.now();
+    motor.seq = Math.max(motor.seq + 1, ts);
+    const c = JSON.stringify({ seq: motor.seq, ts, arm: motor.armed, stop, t: motor.t.slice() });
+    const sig = await crypto.subtle.sign('HMAC', motor.key, enc.encode(c));
+    relayClient.publish(TOPIC_6U + '/cmd', JSON.stringify({ c, s: hex(sig) }), { qos: 0, retain: false });
+    motor.lastSendAt = Date.now();
+    return true;
+}
+
+let pendingSend = null;
+function queueSend() {           // at most ~10 commands/s while a slider is dragged
+    if (pendingSend) return;
+    pendingSend = setTimeout(() => { pendingSend = null; sendMotorCommand(); }, 100);
+}
+
+function renderMotors() {
+    const unlocked = !!motor.key;
+    $('motor-unlock').textContent = unlocked ? 'Lock' : 'Unlock';
+    $('motor-pass').disabled = unlocked;
+    const arm = $('motor-arm');
+    arm.disabled = !unlocked;
+    arm.setAttribute('aria-pressed', String(motor.armed));
+    arm.textContent = motor.armed ? 'Armed · Disarm' : 'Arm';
+    sliders.forEach((sl, i) => {
+        sl.disabled = !motor.armed;
+        sl.value = motor.t[i];
+        setText(`m${i + 1}-val`, String(motor.t[i]));
+    });
+    allSlider.disabled = !motor.armed;
+    const nodeLive = Date.now() - motor.nodeAt < 3000;
+    sliders.forEach((_, i) => setText(`m${i + 1}-rb`, nodeLive && motor.node && motor.node.t[i] !== null ? `6U reports ${motor.node.t[i]}%` : '6U reports --'));
+    const badge = $('motor-badge');
+    badge.textContent = nodeLive ? (motor.node.failsafe ? '6U failsafe: motors stopped' : motor.node.armed ? '6U motors armed' : '6U motor node connected')
+                                 : '6U motor node not connected';
+    badge.classList.toggle('is-warn', !nodeLive || motor.node.failsafe || motor.node.armed);
+}
+
+function stopAll() {
+    motor.armed = false;
+    motor.t = [0, 0, 0, 0];
+    allSlider.value = 0;
+    setText('m-all-val', '0%');
+    renderMotors();
+    // Send a few times: a single lost packet must not leave motors running.
+    for (let i = 0; i < 3; i++) setTimeout(() => sendMotorCommand(true), i * 150);
+}
+
+$('motor-key-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (motor.key) { stopAll(); motor.key = null; renderMotors(); return; }   // Lock
+    const pass = $('motor-pass').value;
+    if (pass.length < 8) { setText('motor-note', 'Use a passphrase of at least 8 characters.'); return; }
+    const raw = await crypto.subtle.digest('SHA-256', enc.encode(pass));
+    motor.key = await crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    $('motor-pass').value = '';
+    renderMotors();
+});
+
+$('motor-arm').addEventListener('click', () => {
+    if (motor.armed) { stopAll(); return; }
+    if (!window.confirm('Arm all 4 motors? Make sure propellers and hands are clear.')) return;
+    motor.armed = true;
+    renderMotors();
+    sendMotorCommand();
+});
+$('motor-stop').addEventListener('click', stopAll);
+
+sliders.forEach((sl, i) => sl.addEventListener('input', () => {
+    motor.t[i] = Number(sl.value);
+    setText(`m${i + 1}-val`, sl.value);
+    queueSend();
+}));
+allSlider.addEventListener('input', () => {
+    const v = Number(allSlider.value);
+    motor.t = [v, v, v, v];
+    setText('m-all-val', `${v}%`);
+    renderMotors();
+    queueSend();
+});
+
+// Keep-alive while armed; the 6U's 1.5 s failsafe stops the motors if these stop.
+setInterval(() => {
+    if (motor.armed && Date.now() - motor.lastSendAt >= MOTOR_KEEPALIVE_MS) sendMotorCommand();
+    renderMotors();
+}, MOTOR_KEEPALIVE_MS);
+// Leaving the page or hiding the tab disarms.
+document.addEventListener('visibilitychange', () => { if (document.hidden && motor.armed) stopAll(); });
+window.addEventListener('pagehide', () => { if (motor.armed) stopAll(); });
+
+// Readback from the 6U: {"armed":bool,"failsafe":bool,"t":[m1..m4]} (planned firmware)
+function onMotorReadback(text, retained) {
+    if (retained) return;
+    let d;
+    try { d = JSON.parse(text); } catch (e) { return; }
+    if (!d || typeof d !== 'object' || !Array.isArray(d.t)) return;
+    motor.node = { armed: d.armed === true, failsafe: d.failsafe === true, t: [0, 1, 2, 3].map((i) => num(d.t[i], 0, 100)) };
+    motor.nodeAt = Date.now();
+    renderMotors();
+}
+renderMotors();
 
 // ==========================================
 // DEMO (?demo): clearly labelled simulated data for previewing the UI
