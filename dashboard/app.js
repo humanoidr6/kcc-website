@@ -488,7 +488,11 @@ function onCamStats(text) {
     try { s = JSON.parse(text); } catch (e) { return; }
     if (!s || typeof s !== 'object') return;
     const c = crafts['6u'];
-    c.cam.stats = { fps: num(s.fps, 0, 100), rssi: num(s.rssi, -160, 20) };
+    // The ESP32 counts frames per 1 s window; at <1 fps most windows read 0, so average the last 10.
+    const fps = num(s.fps, 0, 100);
+    if (fps !== null) { c.cam.fpsWin = (c.cam.fpsWin || []).concat(fps).slice(-10); }
+    const win = c.cam.fpsWin || [];
+    c.cam.stats = { fps: win.length ? win.reduce((a, b) => a + b, 0) / win.length : null, rssi: num(s.rssi, -160, 20) };
     const ts = num(s.ts, 0, 1e14);
     if (ts && ts > c.lastSeenTs) c.lastSeenTs = ts;
 }
