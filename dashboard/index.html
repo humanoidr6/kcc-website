@@ -234,7 +234,6 @@
            POWER
            ============================================================ */
         .power-body { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; padding: 0 16px 16px; flex: 1; min-height: 0; }
-        @media (min-width: 640px) and (max-width: 1279px) { .power-body { grid-template-columns: repeat(2, minmax(0,1fr)); } }
         .power-tile { padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; min-height: 124px; min-width: 0; }
         .power-head { display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
         .power-head .metric-label { white-space: nowrap; }
@@ -245,14 +244,9 @@
         .solar-bar { flex: 1; min-width: 0; height: 4%; min-height: 4px; border-radius: 9999px; background: #cbd5e1; transition: height .3s, background-color .3s; }
         .caption { margin: 0; font-size: .75rem; color: var(--ink-2); }
 
-        .batt-value { font-size: 1.9rem; font-weight: 700; text-align: center; line-height: 1; margin-top: auto; }
-        .batt-state { text-align: center; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
-        .batt-track { width: 100%; height: 12px; background: #cbd5e1; border-radius: 9999px; overflow: hidden; }
-        .batt-fill { height: 100%; width: 0; background: var(--ok); transition: width .5s, background-color .5s; }
-        .batt-fill.is-warn { background: var(--warn); } .batt-fill.is-bad { background: var(--bad); }
 
         /* Dim readings while the link is down so stale numbers aren't mistaken for live data */
-        body.link-lost .metric-val, body.link-lost .angle dd, body.link-lost .batt-value, body.link-lost .solar-bars { opacity: .45; }
+        body.link-lost .metric-val, body.link-lost .angle dd, body.link-lost .solar-bars { opacity: .45; }
 
         /* ============================================================
            FULLSCREEN (native API, or .fs-fallback on browsers without it, e.g. iPhone)
@@ -276,13 +270,10 @@
         .is-fs .temp-row .metric-val { font-size: clamp(1.75rem, 3.6vw, 4.25rem); }
         .is-fs .unit { font-size: clamp(.9rem, 1.4vw, 1.6rem); }
         .is-fs .spark { min-height: 12vh; }
-        .is-fs .power-body { padding: 0 28px 28px; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+        .is-fs .power-body { padding: 0 28px 28px; gap: 18px; }
         .is-fs .power-tile { padding: 1.5rem 2rem; gap: 12px; }
         .is-fs .power-head .val { font-size: clamp(2rem, 4vw, 5rem); }
         .is-fs .solar-bars { min-height: 20vh; gap: 8px; }
-        .is-fs .batt-value { font-size: clamp(4rem, 8vw, 10rem); }
-        .is-fs .batt-state { font-size: clamp(1rem, 2vw, 2.5rem); margin-bottom: 8px; }
-        .is-fs .batt-track { height: 24px; }
 
 
         /* ============================================================
@@ -486,17 +477,6 @@
                     <div id="solar-bars" class="solar-bars" role="img" aria-label="Output of the 12 solar panels"></div>
                     <p class="caption" id="cap-solar">12 panels · output %</p>
                 </div>
-                <div class="inner-box power-tile">
-                    <div class="power-head">
-                        <span class="metric-label">Battery</span>
-                        <span class="mono val muted" id="val-batt-v">-- V</span>
-                    </div>
-                    <div class="mono batt-value" id="val-batt">--</div>
-                    <div class="batt-state" id="batt-state">&nbsp;</div>
-                    <div class="batt-track" role="progressbar" aria-label="Battery charge" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="batt-track">
-                        <div id="batt-bar" class="batt-fill"></div>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -514,8 +494,8 @@
             </div>
             <div class="motor-body">
                 <form class="motor-row" id="motor-key-form" autocomplete="off">
-                    <label class="metric-label" for="motor-pass" style="flex-basis:100%">Operator passphrase</label>
-                    <input type="password" id="motor-pass" class="motor-input" autocomplete="off" placeholder="Enter to unlock the controls">
+                    <label class="metric-label" for="motor-pass" style="flex-basis:100%">Operator password</label>
+                    <input type="password" id="motor-pass" class="motor-input" autocomplete="off" placeholder="Password to unlock the controls">
                     <button type="submit" class="fs-btn" id="motor-unlock">Unlock</button>
                     <button type="button" class="fs-btn motor-arm" id="motor-arm" aria-pressed="false" disabled>Arm</button>
                     <button type="button" class="fs-btn motor-stop" id="motor-stop">Stop all</button>
@@ -551,12 +531,12 @@
                     <input type="range" class="motor-slider" id="m-all" min="0" max="100" step="1" value="0" disabled>
                     <span class="mono" id="m-all-val">0%</span>
                 </div>
-                <p class="caption" id="motor-note">Commands are signed with the operator passphrase and sent to the 6U uplink. The 6U motor node isn't connected yet, so no motor receives them.</p>
+                <p class="caption" id="motor-note">Commands are signed with the operator password and sent to the 6U uplink. The 6U motor node isn't connected yet, so no motor receives them.</p>
             </div>
         </section>
 
     </main>
 
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
 </body>
 </html>
