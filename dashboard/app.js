@@ -123,7 +123,7 @@ const crafts = {
         label: '6U · KCC-NODE-06',
         hasCamera: true,
         cards: { power: true, motors: true },
-        pressureTile: true,
+        pressureTile: false,      // no pressure sensor on the 6U
         simulatedSolar: true,     // no panel fitted: 16–19 V, captioned "simulated"
         // The 6U carries only the MPU-9250 (attitude). By request its temperature, humidity and
         // light show the 1U's readings (labelled "from 1U"); there is no pressure sensor.

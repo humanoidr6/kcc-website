@@ -297,6 +297,8 @@
         #cam-canvas[hidden] { display: none; }
         .card[hidden], .dash-grid [hidden] { display: none !important; }
         @media (min-width: 768px) { .craft-1u .sensor-grid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+        /* 6U: three tiles in a two-column grid, so the last one spans the row */
+        @media (min-width: 480px) { .craft-6u .sensor-grid > .tile:not([hidden]):last-child { grid-column: span 2; } }
 
         /* Motor control (6U): built from the template's tile/chip/button styles */
         .motor-body { display: flex; flex-direction: column; gap: 10px; padding: 0 16px 16px; flex: 1; min-height: 0; overflow: auto; }
@@ -533,6 +535,6 @@
 
     </main>
 
-    <script src="app.js?v=7"></script>
+    <script src="app.js?v=8"></script>
 </body>
 </html>
