@@ -480,6 +480,7 @@ function on1U(text, retained) {
         out.pitch = deg(Math.atan2(-ax, Math.sqrt(ay * ay + az * az)));
         out.roll = deg(Math.atan2(ay, az));
     }
+    out.yaw = num(d.yaw, -360, 360);   // gyro-integrated on the 1U, relative to its power-up heading
     updateDashboardData('1u', out, !retained, num(d.ts, 0, 1e14) || 0);
 }
 
