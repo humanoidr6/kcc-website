@@ -287,8 +287,10 @@ function renderValues() {
     renderSolar();
 
     // Attitude: pitch/roll from the accelerometer; yaw needs a gyro/magnetometer
+    // Yaw only where a gyro reports it (the 6U, relative to its power-up heading).
+    const yawOk = f.attitude && v.yaw !== undefined && v.yaw !== null;
     if (f.attitude && v.pitch !== undefined && v.pitch !== null) {
-        cube.style.transform = `translateZ(-70px) rotateX(${v.pitch}deg) rotateZ(${v.roll}deg)`;
+        cube.style.transform = `translateZ(-70px) rotateX(${v.pitch}deg) rotateY(${yawOk ? v.yaw : 0}deg) rotateZ(${v.roll}deg)`;
         setText('val-pitch', normAngle(v.pitch).toFixed(2) + '°');
         setText('val-roll', normAngle(v.roll).toFixed(2) + '°');
     } else {
@@ -296,7 +298,7 @@ function renderValues() {
         setText('val-pitch', '--');
         setText('val-roll', '--');
     }
-    setText('val-yaw', '--');
+    setText('val-yaw', yawOk ? normAngle(v.yaw).toFixed(2) + '°' : '--');
     const ob = $('orient-badge');
     const attOk = f.attitude && v.pitch !== undefined && v.pitch !== null;
     ob.textContent = c.pending ? missing
@@ -448,9 +450,10 @@ function updateDashboardData(craftId, data, live = true, ts = 0) {
             } else if (now - c.prevAttitude.t >= 1000) {
                 const dt = (now - c.prevAttitude.t) / 1000;
                 const d = (a, b) => Math.abs(normAngle(a - b));
-                const rate = Math.max(d(data.pitch, c.prevAttitude.p), d(data.roll, c.prevAttitude.r)) / dt;
+                const dy = (typeof data.yaw === 'number' && typeof c.prevAttitude.y === 'number') ? d(data.yaw, c.prevAttitude.y) : 0;
+                const rate = Math.max(d(data.pitch, c.prevAttitude.p), d(data.roll, c.prevAttitude.r), dy) / dt;
                 c.badge = rate < STABLE_RATE_DEG_S ? 'Stable' : 'Rotating';
-                c.prevAttitude = { p: data.pitch, r: data.roll, t: now };
+                c.prevAttitude = { p: data.pitch, r: data.roll, y: data.yaw, t: now };
             }
         }
     }
@@ -488,7 +491,7 @@ function on6U(text, retained) {
     if (!d || typeof d !== 'object') return;
     // The 6U now carries only the IMU; its temp/humidity/light come from the 1U (mirrorEnv).
     const ax = num(d.ax, -16, 16), ay = num(d.ay, -16, 16), az = num(d.az, -16, 16);
-    const out = {};
+    const out = { yaw: num(d.yaw, -360, 360) };   // gyro-integrated, relative to power-up
     if (ax !== null && ay !== null && az !== null) {
         out.pitch = deg(Math.atan2(-ax, Math.sqrt(ay * ay + az * az)));
         out.roll = deg(Math.atan2(ay, az));
