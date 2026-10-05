@@ -4,7 +4,7 @@
     <!-- UI from github.com/mahamatkher/6U_Dashboard, wired to the KCC radio links. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Live ground-station dashboard for the KCC 1U and 6U CubeSat demonstrators: camera feed, attitude, sensors and power.">
+    <meta name="description" content="Live ground-station dashboard for the KCC 1U and 6U CubeSat demonstrators: the 6U camera feed, attitude, sensors and power.">
     <title>6U ground station Dashboard</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛰️</text></svg>">
 
@@ -12,9 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js"></script>
 
     <style>
@@ -108,13 +106,14 @@
             .dash-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
             .dash-grid > .card { grid-column: span 2; }
             .dash-grid > .c-optical, .dash-grid > .c-orient { grid-column: span 1; }
+            .no-camera .dash-grid > .c-orient { grid-column: span 2; }
         }
         @media (min-width: 1280px) {
             .dash-grid { gap: 20px; grid-template-columns: repeat(12, minmax(0,1fr)); grid-template-rows: minmax(300px,1fr) minmax(340px,1fr); }
             .c-optical, .c-orient { grid-column: span 6 !important; }
-            .c-sensors { grid-column: span 4 !important; }
-            .c-power   { grid-column: span 2 !important; }
-            .c-map     { grid-column: span 6 !important; }
+            .c-sensors { grid-column: span 8 !important; }
+            .c-power   { grid-column: span 4 !important; }
+            .no-camera .c-orient { grid-column: span 12 !important; }
         }
 
         /* ============================================================
@@ -251,23 +250,6 @@
         .batt-fill { height: 100%; width: 0; background: var(--ok); transition: width .5s, background-color .5s; }
         .batt-fill.is-warn { background: var(--warn); } .batt-fill.is-bad { background: var(--bad); }
 
-        /* ============================================================
-           MAP
-           ============================================================ */
-        .c-map { min-height: 400px; }
-        .coords { display: flex; flex-wrap: wrap; gap: 6px; }
-        .coord-chip { font-size: .75rem; font-weight: 700; color: var(--brand-text); background: var(--brand-soft); padding: 5px 10px; border-radius: .5rem; white-space: nowrap; }
-        .map-wrap { position: relative; flex: 1; min-height: 280px; margin: 0 12px 12px; border-radius: 1rem; overflow: hidden; border: 1px solid var(--line); }
-        #map { position: absolute; inset: 0; background: #e2e8f0; }
-        .map-tiles { filter: grayscale(80%) contrast(1.1) brightness(1.1); }
-        .leaflet-control-attribution { font-size: 11px !important; }
-        #recenter-btn { position: absolute; top: 12px; right: 12px; z-index: 1000; min-height: 40px; padding: 0 14px; border-radius: 9999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: 700 .75rem 'Inter', sans-serif; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
-        #recenter-btn i { color: var(--brand-text); }
-        #recenter-btn[hidden] { display: none; }
-        .craft-icon { position: relative; display: grid; place-items: center; }
-        .craft-dot { width: 16px; height: 16px; background: #0f172a; border: 3px solid #fff; border-radius: 9999px; box-shadow: 0 2px 8px rgba(0,0,0,.4); position: relative; z-index: 1; }
-        .craft-ping { position: absolute; width: 48px; height: 48px; border: 2px solid rgba(14,165,233,.5); border-radius: 9999px; animation: ping 1.8s cubic-bezier(0,0,.2,1) infinite; }
-
         /* Dim readings while the link is down so stale numbers aren't mistaken for live data */
         body.link-lost .metric-val, body.link-lost .angle dd, body.link-lost .batt-value, body.link-lost .solar-bars { opacity: .45; }
 
@@ -300,8 +282,6 @@
         .is-fs .batt-value { font-size: clamp(4rem, 8vw, 10rem); }
         .is-fs .batt-state { font-size: clamp(1rem, 2vw, 2.5rem); margin-bottom: 8px; }
         .is-fs .batt-track { height: 24px; }
-        .is-fs .map-wrap { margin: 0 28px 28px; }
-        .is-fs .coord-chip { font-size: clamp(1rem, 1.5vw, 1.75rem); padding: 8px 16px; border-radius: 1rem; }
 
 
         /* ============================================================
@@ -323,6 +303,7 @@
         .craft-btn.is-lost .craft-dot-sm { background: var(--bad); }
         #cam-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
         #cam-canvas[hidden] { display: none; }
+        .card[hidden] { display: none; }
         .tile .caption, .power-tile .caption { margin-top: auto; }
 
         @media (prefers-reduced-motion: reduce) {
@@ -355,7 +336,7 @@
                 <span class="clock-label">UTC</span>
                 <time id="utc-time" class="mono">--:--:--</time>
             </div>
-            <img src="assets/kcc logo.png" alt="Kalpana Chawla Centre for Research in Space Science and Technology" class="kcc-logo" width="261" height="87">
+            <a href="../" title="Back to the KCC website"><img src="assets/kcc logo.png" alt="Kalpana Chawla Centre for Research in Space Science and Technology — back to the KCC website" class="kcc-logo" width="261" height="87"></a>
         </div>
     </header>
 
@@ -500,28 +481,8 @@
             </div>
         </section>
 
-        <!-- TRACKING -->
-        <section class="card c-map" aria-labelledby="t-map" data-fs-card>
-            <div class="card-header">
-                <h2 class="card-title" id="t-map"><i class="fa-solid fa-map-location-dot accent" aria-hidden="true"></i>Tracking</h2>
-                <div class="header-actions">
-                    <div class="coords mono" id="coord-display" aria-live="off">
-                        <span class="coord-chip">Awaiting data…</span>
-                    </div>
-                    <button type="button" class="fs-btn" data-fs-btn data-label="Tracking">
-                        <span class="when-idle"><i class="fa-solid fa-expand" aria-hidden="true"></i></span>
-                        <span class="when-fs"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Back to Dashboard</span>
-                    </button>
-                </div>
-            </div>
-            <div class="map-wrap">
-                <div id="map" role="application" aria-label="Map showing the craft's ground track"></div>
-                <button type="button" id="recenter-btn" hidden><i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>Follow craft</button>
-            </div>
-        </section>
-
     </main>
 
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>
