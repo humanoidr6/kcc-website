@@ -215,6 +215,23 @@
             #link-monitor .crt-screen { height: auto !important; }
         }
     </style>
+    <style>
+        /* ---- CAM-01 imaging unit: a second rack unit under the telemetry console ---- */
+        body { flex-direction: column; gap: 25px; }
+        .console.cam-unit { grid-template-columns: 2fr 1fr; }
+        .cam-crt { padding: 8px; margin-bottom: 0; }
+        #cam-canvas { display: block; width: 100%; aspect-ratio: 4 / 3; image-rendering: auto; }
+        #cam-nosig {
+            position: absolute; left: 0; right: 0; bottom: 18px; z-index: 3;
+            text-align: center; font-size: 24px; color: var(--crt-amber);
+            text-shadow: 0 0 5px var(--crt-amber); background: rgba(10, 17, 10, 0.75); padding: 4px 0;
+        }
+        #cam-nosig[hidden] { display: none; }
+        .cam-note { font-size: 13px; color: #222; margin-top: 14px; line-height: 1.4; }
+        @media (max-width: 1000px) {
+            .console.cam-unit { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
     <div class="console">
@@ -304,7 +321,41 @@
         </div>
     </div>
 
+    <div class="console cam-unit">
+        <div class="sub-panel">
+            <div class="panel-label">CAM-01 IMAGING PAYLOAD</div>
+            <div class="crt-screen cam-crt">
+                <canvas id="cam-canvas" width="160" height="120" role="img" aria-label="Live video from the CAM-01 camera node"></canvas>
+                <div id="cam-nosig" role="status" aria-live="polite">AWAITING VIDEO</div>
+            </div>
+        </div>
+
+        <div class="sub-panel">
+            <div class="panel-label">VIDEO DOWNLINK</div>
+            <div class="crt-screen">
+                <div class="data-row"><span class="data-label">LINK:</span> <span id="cam-link">CONNECTING</span></div>
+                <div class="data-row"><span class="data-label">FRAME RATE:</span> <span><span id="cam-fps">--</span> FPS</span></div>
+                <div class="data-row"><span class="data-label">PACKETS:</span> <span><span id="cam-pps">--</span> /S</span></div>
+                <div class="data-row"><span class="data-label">DATA:</span> <span><span id="cam-kbps">--</span> KBPS</span></div>
+                <div class="data-row"><span class="data-label">PKT LOSS:</span> <span id="cam-loss">--</span></div>
+                <div class="data-row"><span class="data-label">RSSI:</span> <span id="cam-rssi">--</span></div>
+            </div>
+            <div class="indicators-row">
+                <div class="lamp-box">
+                    <div class="lamp-label">VIDEO CARRIER</div>
+                    <div class="lamp" id="lamp-cam-carrier"></div>
+                </div>
+                <div class="lamp-box">
+                    <div class="lamp-label">GROUND STN</div>
+                    <div class="lamp" id="lamp-cam-bridge"></div>
+                </div>
+            </div>
+            <p class="cam-note">OV7670 on a Teensy 4.1, 160&times;120 grayscale over an SX1278 FSK link at 250&nbsp;kbps, relayed from the ground station.</p>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js"></script>
     <script src="assets/js/telemetry.js?v=2"></script>
+    <script src="assets/js/camfeed.js?v=1"></script>
 </body>
 </html>
