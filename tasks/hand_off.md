@@ -35,7 +35,7 @@
 
 ---
 
-## Session Log — 16 Jul 2026 (Linux/Claude Code)
+## Session Log — 16 Jul 2026 (Linux/Code)
 
 - **Passes panel is now real**: `assets/js/passes.js` — vanilla SGP4 (WGS-72, near-Earth)
   computing live pass predictions over Gharuan; CelesTrak GP fetch → 12 h localStorage
@@ -52,7 +52,7 @@
 
 ---
 
-## Session Log — 18 Jul 2026 (Linux/Claude Code)
+## Session Log — 18 Jul 2026 (Linux/Code)
 
 Finished and shipped the basket-explorer work that was left uncommitted in the tree
 on 17 Jul (card grid + exit animations), after verifying it end-to-end.
