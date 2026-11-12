@@ -1,13 +1,13 @@
 // KCC ground-station dashboard: UI from github.com/mahamatkher/6U_Dashboard,
 // fed live from the same public MQTT broker and topics as telemetry.html.
 //
-//   1U · KCC-NODE-01  kcc-cu/node01-29e8ea47/{telemetry,status}   DHT11, LDR, MPU6050 (via the ESP32); no camera
+//   1U · KCC-NODE-01  kcc-cu/node01-29e8ea47/{telemetry,status}   BMP280 (temp, pressure), GNSS, MPU-6500 (via the ESP32); no camera
 //   6U · KCC-NODE-06  kcc-cu/cam01-040d37e7/{frame,stats,status}  OV7670 camera (via the same ESP32)
 //   6U · KCC-NODE-06  kcc-cu/node06-48de3288/telemetry            MPU-9250 attitude (via the ESP32); the 6U carries
-//                                                                 no env sensors, so its card shows the 1U's temp/humidity/light
+//                                                                 no BMP280/GNSS, so its card shows the 1U's pressure and position
 //                     kcc-cu/node06-48de3288/cmd                  signed motor commands (6U motor node not built yet)
 //                     kcc-cu/node06-48de3288/motors               motor readback, when the 6U node exists
-//   Neither craft carries GPS, so there is no tracking card. The 6U solar reading is
+//   The 1U's GNSS position shows in the Sensors card (no map/tracking card). The 6U solar reading is
 //   simulated (16–19 V) by request, because no panel is fitted; it is captioned as such.
 //                     6U sensors/power are planned and show as "awaiting" until they exist.
 //
@@ -110,12 +110,12 @@ const crafts = {
         label: '1U · KCC-NODE-01',
         hasCamera: false,
         cards: { power: false, motors: false },
-        pressureTile: false,
-        fitted: { tempExt: true, pressure: false, humidity: true, light: true, attitude: true, power: false, solar: false },
+        pressureTile: true,
+        fitted: { tempExt: true, pressure: true, gnss: true, attitude: true, power: false, solar: false },
         lastDataAt: null,       // local ms of the newest live message
         lastSeenTs: 0,          // epoch ms of the newest message, live or retained
         values: {},
-        hist: { pres: emptyHistory(), hum: emptyHistory(), light: emptyHistory() },
+        hist: { pres: emptyHistory() },
         prevAttitude: null,
         badge: 'Awaiting data'
     },
@@ -123,18 +123,18 @@ const crafts = {
         label: '6U · KCC-NODE-06',
         hasCamera: true,
         cards: { power: true, motors: true },
-        pressureTile: false,      // no pressure sensor on the 6U
+        pressureTile: true,       // the 6U has no BMP280: pressure comes from the 1U
         simulatedSolar: true,     // no panel fitted: 16–19 V, captioned "simulated"
-        // The 6U carries only the MPU-9250 (attitude). By request its temperature, humidity and
-        // light show the 1U's readings (labelled "from 1U"); there is no pressure sensor.
+        // Temperature: the 6U's own reading when it sends one, else the 1U's. Pressure and
+        // GNSS always come from the 1U (labelled "from 1U").
         mirrorEnv: '1u',
-        fitted: { tempExt: true, pressure: false, humidity: true, light: true, attitude: true, power: false, solar: false },
+        fitted: { tempExt: true, pressure: true, gnss: true, attitude: true, power: false, solar: false },
         pending: true,            // until the first 6U packet arrives (attitude only)
         notResponding: { attitude: 'MPU-9250 not responding' },
         lastDataAt: null,
         lastSeenTs: 0,
         values: {},
-        hist: { pres: emptyHistory(), hum: emptyHistory(), light: emptyHistory() },
+        hist: { pres: emptyHistory() },
         prevAttitude: null,
         badge: 'Awaiting data',
         cam: { frame: null, lastFrameAt: 0, status: null, stats: null }
@@ -196,9 +196,7 @@ function createSparkline(canvasId, unit, decimals) {
 }
 
 const charts = {
-    pres:  createSparkline('chart-pres',  'kPa', 2),
-    hum:   createSparkline('chart-hum',   '%',   1),
-    light: createSparkline('chart-light', 'ADC', 0)
+    pres:  createSparkline('chart-pres',  'hPa', 1)
 };
 
 function pushHistory(craft, key, value) {
@@ -210,7 +208,8 @@ function pushHistory(craft, key, value) {
 function showHistory(craft) {
     const envSrc = craft.mirrorEnv ? crafts[craft.mirrorEnv] : craft;
     for (const key of Object.keys(charts)) {
-        const src = key === 'pres' ? craft : envSrc;
+        const hasLocal = craft.values.pressure !== undefined && craft.values.pressure !== null;
+        const src = !craft.mirrorEnv || hasLocal ? craft : envSrc;
         charts[key].data.datasets[0].data = src.hist[key].slice();
         charts[key].update('none');
     }
@@ -259,29 +258,43 @@ function linkStateOf(craft) {
 function renderValues() {
     const c = crafts[current];
     const v = c.values;
-    const env = c.mirrorEnv ? crafts[c.mirrorEnv].values : v;   // temp/humidity/light source
+    const fallbackEnv = c.mirrorEnv ? crafts[c.mirrorEnv].values : {};
+    const pick = (key) => (v[key] != null ? v[key] : fallbackEnv[key]);
+    const env = {
+        tempExt: pick('tempExt'),
+        pressure: pick('pressure'),
+        lat: pick('lat'), lon: pick('lon'), sats: pick('sats')
+    };
+    const envKeys = ['tempExt', 'pressure', 'sats'];
+    const localEnv = envKeys.some(key => v[key] != null);
+    const mirrorEnv = envKeys.some(key => v[key] == null && fallbackEnv[key] != null);
     const f = c.fitted;
     const missing = c.pending ? 'Awaiting 6U sensor node' : 'Not fitted';
 
     setText('val-temp-ext', f.tempExt ? fmt(env.tempExt, 1) : '--');
-    const presOk = f.pressure && v.pressure !== undefined && v.pressure !== null;
-    setText('val-pres', presOk ? fmt(v.pressure, 1) : '--');
+    const presOk = f.pressure && env.pressure != null;
+    setText('val-pres', presOk ? fmt(env.pressure, 1) : '--');
     setText('cap-pres', presOk ? '\u00a0' : f.pressure ? ((c.notResponding || {}).pressure || 'Awaiting data') : 'Not fitted');
-    setText('val-hum', f.humidity ? fmt(env.humidity, 1) : '--');
-    setText('val-light', f.light && env.light !== undefined && env.light !== null ? String(Math.round(env.light)) : '--');
-    setText('unit-light', 'ADC');   // the LDR reports a raw 0–4095 reading, not lux
+
+    // GNSS: position only while the receiver has a fix; the satellite count comes regardless.
+    const fix = env.lat != null && env.lon != null;
+    setText('val-lat', fix ? env.lat.toFixed(5) : '--');
+    setText('val-lon', fix ? env.lon.toFixed(5) : '--');
+    setText('val-sats', env.sats != null ? String(env.sats) : '--');
+    setText('cap-gnss', !f.gnss ? 'Not fitted' : fix ? 'Fix' : env.sats != null ? 'No fix yet: searching for satellites' : 'Awaiting data');
 
     const sb = $('sensor-badge');
-    if (!Object.keys(env).length) {
+    const hasEnv = env.tempExt != null || presOk || env.sats != null;
+    if (!hasEnv) {
         sb.textContent = 'Awaiting data';
     } else {
         const names = [];
-        if (env.tempExt !== undefined || env.humidity !== undefined) names.push('DHT11');
-        if (env.light !== undefined && env.light !== null) names.push('LDR');
-        if (presOk) names.push('BMP280');
-        sb.textContent = (c.mirrorEnv ? 'From 1U: ' : '') + (names.join(' · ') || 'Awaiting data');
+        if (env.tempExt != null || presOk) names.push('BMP280');
+        if (env.sats != null) names.push('GNSS');
+        const source = !c.mirrorEnv ? '' : localEnv && mirrorEnv ? 'From 6U + 1U: ' : localEnv ? 'From 6U: ' : 'From 1U: ';
+        sb.textContent = source + (names.join(' · ') || 'Awaiting data');
     }
-    sb.classList.toggle('is-warn', !Object.keys(env).length);
+    sb.classList.toggle('is-warn', !hasEnv);
 
     // Power (6U only): the Solar Array tile; there is no battery indicator.
     renderSolar();
@@ -430,7 +443,7 @@ setInterval(renderLink, 1000);
 // ==========================================
 // DATA INJECTION
 // ==========================================
-// data uses the template's keys: tempExt, humidity, light, pitch, roll, ...
+// data uses the template's keys: tempExt, pressure, lat, lon, sats, pitch, roll, ...
 function updateDashboardData(craftId, data, live = true, ts = 0) {
     const c = crafts[craftId];
     if (!c || !data) return;
@@ -440,8 +453,6 @@ function updateDashboardData(craftId, data, live = true, ts = 0) {
 
     if (live) {
         if (data.pressure !== undefined) pushHistory(c, 'pres', data.pressure);
-        if (data.humidity !== undefined) pushHistory(c, 'hum', data.humidity);
-        if (data.light !== undefined) pushHistory(c, 'light', data.light);
         if (data.pitch !== undefined && data.pitch !== null) {
             // Rate over >= 1 s: accelerometer noise at 4 updates/s would otherwise flicker the badge.
             const now = Date.now();
@@ -493,13 +504,16 @@ function on1U(text, retained) {
     let d;
     try { d = JSON.parse(text); } catch (e) { return; }
     if (!d || typeof d !== 'object') return;
-    const temp = num(d.temp, -40, 85), hum = num(d.hum, 0, 100), ldr = num(d.ldr, 0, 4095);
+    const temp = num(d.temp, -40, 85), pres = num(d.pres, 300, 1100);
+    const lat = num(d.lat, -90, 90), lon = num(d.lon, -180, 180), sats = num(d.sats, 0, 99);
     const ax = num(d.accelx, -16, 16), ay = num(d.accely, -16, 16), az = num(d.accelz, -16, 16);
     const out = {};
-    // The ESP32 reports 0.00 until the DHT11 has produced a reading.
-    if (temp !== null && temp.toFixed(2) !== '0.00') out.tempExt = temp;
-    if (hum !== null && hum.toFixed(2) !== '0.00') out.humidity = hum;
-    if (ldr !== null) out.light = ldr;
+    // BMP280 temperature (°C) and pressure (hPa); GNSS lat/lon only with a fix (else null).
+    out.tempExt = temp;
+    out.pressure = pres;
+    out.lat = lat !== null && lon !== null ? lat : null;
+    out.lon = lat !== null && lon !== null ? lon : null;
+    out.sats = sats;
     if (ax !== null && ay !== null && az !== null && (ax || ay || az)) {
         const [cx, cy, cz] = rotate(CAL_1U.R, [ax, ay, az]);   // mounting calibration
         out.pitch = deg(Math.atan2(-cx, Math.sqrt(cy * cy + cz * cz)));
@@ -510,15 +524,17 @@ function on1U(text, retained) {
     updateDashboardData('1u', out, !retained, num(d.ts, 0, 1e14) || 0);
 }
 
-// 6U JSON from the ESP32: {"temp","hum","ldr","ax","ay","az","pres"(hPa),"rssi","pkts","via","ts"};
+// 6U JSON from the ESP32: {"temp","ax","ay","az","yaw","rssi","pkts","via","ts"} (hum/ldr no longer shown);
 // null = that sensor isn't responding.
 function on6U(text, retained) {
     let d;
     try { d = JSON.parse(text); } catch (e) { return; }
     if (!d || typeof d !== 'object') return;
-    // The 6U now carries only the IMU; its temp/humidity/light come from the 1U (mirrorEnv).
     const ax = num(d.ax, -16, 16), ay = num(d.ay, -16, 16), az = num(d.az, -16, 16);
-    const out = { yaw: num(d.yaw, -360, 360) };   // gyro-integrated, relative to power-up
+    const out = {
+        tempExt: num(d.temp, -40, 85),
+        yaw: num(d.yaw, -360, 360)   // gyro-integrated, relative to power-up
+    };
     if (ax !== null && ay !== null && az !== null) {
         out.pitch = deg(Math.atan2(-ax, Math.sqrt(ay * ay + az * az)));
         out.roll = deg(Math.atan2(ay, az));
@@ -739,7 +755,8 @@ function startDemo() {
     setInterval(() => {
         t += 0.25;
         on1U(JSON.stringify({
-            temp: 24 + Math.sin(t / 8), hum: 48 + 2 * Math.sin(t / 5), ldr: 1200 + 300 * Math.sin(t / 3),
+            temp: 24 + Math.sin(t / 8), pres: 980 + 0.5 * Math.sin(t / 5),
+            lat: 30.76890 + 0.0001 * Math.sin(t / 7), lon: 76.57510 + 0.0001 * Math.cos(t / 7), sats: 9,
             accelx: 0.2 * Math.sin(t / 2), accely: 0.2 * Math.cos(t / 3), accelz: 0.97, ts: Date.now()
         }), false);
         for (let y = 0; y < FRAME_H; y++) {

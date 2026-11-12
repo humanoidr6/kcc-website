@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KCC Telemetry Console</title>
-    <meta name="description" content="Live telemetry console for KCC-NODE-01 &mdash; a Teensy 4.1 radioing temperature, humidity, light and acceleration over LoRa to an ESP32 ground station at Chandigarh University.">
+    <meta name="description" content="Live telemetry console for KCC-NODE-01 &mdash; a Teensy 4.1 radioing temperature, pressure, GNSS position and acceleration over LoRa to an ESP32 ground station at Chandigarh University.">
     <meta name="color-scheme" content="dark">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛰️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -254,12 +254,20 @@
                     <span id="val-temp">00.00</span> C
                 </div>
                 <div class="data-row">
-                    <span class="data-label">SYS_HUMD:</span>
-                    <span id="val-hum">00.00</span> %
+                    <span class="data-label">BARO_PRS:</span>
+                    <span id="val-pres">AWAITING</span> hPa
                 </div>
                 <div class="data-row" style="margin-top: 20px;">
-                    <span class="data-label">SOLAR (LDR):</span>
-                    <span id="val-ldr">AWAITING</span>
+                    <span class="data-label">GNSS_LAT:</span>
+                    <span id="val-lat">NO FIX</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">GNSS_LON:</span>
+                    <span id="val-lon">NO FIX</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">GNSS_SAT:</span>
+                    <span id="val-sats">--</span>
                 </div>
             </div>
 
@@ -355,7 +363,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js"></script>
-    <script src="assets/js/telemetry.js?v=2"></script>
+    <script src="assets/js/telemetry.js?v=3"></script>
     <script src="assets/js/camfeed.js?v=1"></script>
 </body>
 </html>

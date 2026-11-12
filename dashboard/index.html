@@ -435,21 +435,28 @@
 
                 <div class="tile" id="tile-pres">
                     <div class="tile-head"><span class="tile-icon"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></span><span class="metric-label">Pressure</span></div>
-                    <div><span class="metric-val" id="val-pres">--</span><span class="unit">kPa</span></div>
+                    <div><span class="metric-val" id="val-pres">--</span><span class="unit">hPa</span></div>
                     <div class="spark"><canvas id="chart-pres" aria-label="Pressure trend, last 30 readings" role="img"></canvas></div>
                     <p class="caption" id="cap-pres">&nbsp;</p>
                 </div>
 
-                <div class="tile">
-                    <div class="tile-head"><span class="tile-icon"><i class="fa-solid fa-droplet" aria-hidden="true"></i></span><span class="metric-label">Outer Humidity</span></div>
-                    <div><span class="metric-val" id="val-hum">--</span><span class="unit">%</span></div>
-                    <div class="spark"><canvas id="chart-hum" aria-label="Humidity trend, last 30 readings" role="img"></canvas></div>
-                </div>
-
-                <div class="tile">
-                    <div class="tile-head"><span class="tile-icon"><i class="fa-solid fa-sun" aria-hidden="true"></i></span><span class="metric-label">Ambient Light</span></div>
-                    <div><span class="metric-val" id="val-light">--</span><span class="unit" id="unit-light">lux</span></div>
-                    <div class="spark"><canvas id="chart-light" aria-label="Ambient light trend, last 30 readings" role="img"></canvas></div>
+                <div class="tile" id="tile-gnss">
+                    <div class="tile-head"><span class="tile-icon"><i class="fa-solid fa-satellite" aria-hidden="true"></i></span><span class="metric-label">GNSS Position</span></div>
+                    <div class="temp-rows">
+                        <div class="temp-row">
+                            <span class="metric-label">Latitude</span>
+                            <span><span class="metric-val mono" id="val-lat">--</span><span class="unit">°</span></span>
+                        </div>
+                        <div class="temp-row">
+                            <span class="metric-label">Longitude</span>
+                            <span><span class="metric-val mono" id="val-lon">--</span><span class="unit">°</span></span>
+                        </div>
+                        <div class="temp-row">
+                            <span class="metric-label">Satellites</span>
+                            <span><span class="metric-val" id="val-sats">--</span></span>
+                        </div>
+                    </div>
+                    <p class="caption" id="cap-gnss">&nbsp;</p>
                 </div>
 
             </div>
@@ -535,6 +542,6 @@
 
     </main>
 
-    <script src="app.js?v=11"></script>
+    <script src="app.js?v=12"></script>
 </body>
 </html>

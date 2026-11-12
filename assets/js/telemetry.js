@@ -36,8 +36,10 @@
     return {
       pkts: num(d.pkts, 0, 1e12),
       temp: num(d.temp, -40, 85),
-      hum: num(d.hum, 0, 100),
-      ldr: num(d.ldr, 0, 4095),
+      pres: num(d.pres, 300, 1100),
+      lat: num(d.lat, -90, 90),
+      lon: num(d.lon, -180, 180),
+      sats: num(d.sats, 0, 99),
       ax: num(d.accelx, -16, 16),
       ay: num(d.accely, -16, 16),
       az: num(d.accelz, -16, 16),
@@ -56,7 +58,7 @@
 
   function sensorValue(id, v) {
     var el = $(id);
-    // The ESP32 reports 0.00 until the DHT11 has produced a reading.
+    // null = the BMP280 isn't answering (older ESP32 builds sent 0.00 instead).
     var bad = v === null || v.toFixed(2) === '0.00';
     el.textContent = bad ? 'SENSOR ERR' : v.toFixed(2).padStart(5, '0');
     el.className = bad ? 'alert-red' : '';
@@ -66,7 +68,7 @@
   try {
     chart = new Chart($('miniChart').getContext('2d'), {
       type: 'line',
-      data: { labels: [], datasets: [{ label: 'LDR', borderColor: '#33ff33', data: [], pointRadius: 0, borderWidth: 2 }] },
+      data: { labels: [], datasets: [{ label: 'Pressure', borderColor: '#33ff33', data: [], pointRadius: 0, borderWidth: 2 }] },
       options: { animation: false, scales: { x: { display: false }, y: { display: false } }, plugins: { legend: { display: false } } }
     });
   } catch (e) {
@@ -87,8 +89,11 @@
   function onFrame(f, retained) {
     if (f.pkts !== null) $('val-pkt').textContent = String(f.pkts).padStart(5, '0');
     sensorValue('val-temp', f.temp);
-    sensorValue('val-hum', f.hum);
-    $('val-ldr').textContent = f.ldr === null ? 'AWAITING' : String(f.ldr);
+    $('val-pres').textContent = f.pres === null ? 'AWAITING' : f.pres.toFixed(2);
+    var fix = f.lat !== null && f.lon !== null;
+    $('val-lat').textContent = fix ? f.lat.toFixed(5) : 'NO FIX';
+    $('val-lon').textContent = fix ? f.lon.toFixed(5) : 'NO FIX';
+    $('val-sats').textContent = f.sats === null ? '--' : String(f.sats);
     $('val-rssi').textContent = (f.rssi === null ? 0 : f.rssi) + ' dBm';
     updateNeedle('ax', f.ax, 2.0);
     updateNeedle('ay', f.ay, 2.0);
@@ -105,13 +110,13 @@
       clearTimeout(rxTimer);
       rxTimer = setTimeout(function () { $('lamp-lock').className = 'lamp'; }, 80);
 
-      if (chart && f.ldr !== null) {
+      if (chart && f.pres !== null) {
         if (chart.data.labels.length > 50) {
           chart.data.labels.shift();
           chart.data.datasets[0].data.shift();
         }
         chart.data.labels.push('');
-        chart.data.datasets[0].data.push(f.ldr);
+        chart.data.datasets[0].data.push(f.pres);
         chart.update();
       }
       logLine('[RX] ' + f.raw);
@@ -153,18 +158,18 @@
 
   function startDemo() {
     relay = 'demo';
-    var pkts = 0, temp = 24.8, hum = 51.0;
+    var pkts = 0, temp = 24.8, pres = 980.3;
     setInterval(function () {
       var s = Date.now() / 1000;
-      if (pkts % 8 === 0) { temp += (Math.random() - 0.5) * 0.2; hum += (Math.random() - 0.5) * 0.6; }
+      if (pkts % 8 === 0) { temp += (Math.random() - 0.5) * 0.2; pres += (Math.random() - 0.5) * 0.1; }
       var d = {
-        pkts: ++pkts, temp: +temp.toFixed(2), hum: +hum.toFixed(2),
-        ldr: Math.round(1150 + 400 * Math.sin(s / 10) + (Math.random() - 0.5) * 60),
+        pkts: ++pkts, temp: +temp.toFixed(2), pres: +pres.toFixed(2),
+        lat: +(30.76890 + 0.00005 * Math.sin(s / 20)).toFixed(5), lon: +(76.57510 + 0.00005 * Math.cos(s / 20)).toFixed(5), sats: 9,
         accelx: +(0.3 * Math.sin(s / 3)).toFixed(2), accely: +(-0.9 + 0.05 * Math.cos(s / 4)).toFixed(2),
         accelz: +(0.45 + 0.05 * Math.sin(s * 1.7)).toFixed(2), rssi: Math.round(-68 + (Math.random() - 0.5) * 6)
       };
-      d.raw = 'Temp:' + d.temp.toFixed(2) + ' Hum:' + d.hum.toFixed(2) + ' LDR:' + d.ldr + ' AccelX:' + d.accelx.toFixed(2) +
-        ' AccelY:' + d.accely.toFixed(2) + ' AccelZ:' + d.accelz.toFixed(2) + ' Seq:' + pkts;
+      d.raw = 'Temp:' + d.temp.toFixed(2) + ' Pres:' + d.pres.toFixed(2) + ' AccelX:' + d.accelx.toFixed(2) +
+        ' AccelY:' + d.accely.toFixed(2) + ' AccelZ:' + d.accelz.toFixed(2) + ' Lat:' + d.lat.toFixed(5) + ' Lon:' + d.lon.toFixed(5) + ' Sat:9 Seq:' + pkts;
       onFrame(parseFrame(JSON.stringify(d)), false);
     }, 250);
   }
