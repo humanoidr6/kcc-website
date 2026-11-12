@@ -77,7 +77,7 @@
     var live = Date.now() - lastFrameAt < LIVE_MS;
     $('cam-nosig').hidden = live;
     if (!live && lastStatsTs) {
-      $('cam-nosig').textContent = 'NO SIGNAL — LAST ' + new Date(lastStatsTs).toLocaleTimeString();
+      $('cam-nosig').textContent = 'NO SIGNAL — LAST ' + new Date(lastStatsTs).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
     }
     $('lamp-cam-carrier').className = 'lamp' + (live ? ' green-on' : '');
     $('lamp-cam-bridge').className = 'lamp' + (bridge === 'online' ? ' green-on' : bridge === 'offline' ? ' red-on' : '');

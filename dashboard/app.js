@@ -40,8 +40,12 @@ const num = (v, lo, hi) => { if (v === null || v === undefined || v === '') retu
 const fmt = (v, d) => (v === null || v === undefined ? '--' : v.toFixed(d));
 const deg = (r) => r * 180 / Math.PI;
 
+// All times on the dashboard are India Standard Time, whatever the viewer's computer is set to.
+const IST = { timeZone: 'Asia/Kolkata', hour12: false };
+const istTime = (t) => new Date(t).toLocaleTimeString('en-GB', IST);
+const istDateTime = (t) => new Date(t).toLocaleString('en-GB', IST);
 function updateClock() {
-    setText('utc-time', new Date().toISOString().substring(11, 19));
+    setText('utc-time', istTime(Date.now()));
 }
 setInterval(updateClock, 1000);
 updateClock();
@@ -388,7 +392,7 @@ function renderCamera() {
         label = 'CAM_1 | LIVE' + (s.fps !== null && s.fps !== undefined ? ` · ${s.fps.toFixed(1)} FPS` : '') +
                 (s.rssi !== null && s.rssi !== undefined ? ` · ${s.rssi} dBm` : '');
     } else if (cam.frame) {
-        label = 'CAM_1 | NO SIGNAL · LAST FRAME' + (c.lastSeenTs ? ' ' + new Date(c.lastSeenTs).toLocaleTimeString() : '');
+        label = 'CAM_1 | NO SIGNAL · LAST FRAME' + (c.lastSeenTs ? ' ' + istTime(c.lastSeenTs) + ' IST' : '');
     } else {
         label = cam.status === 'offline' ? 'CAM_1 | GROUND STN OFFLINE' : 'CAM_1 | NO SIGNAL';
     }
@@ -404,7 +408,7 @@ function renderLink() {
     else if (relay === 'error') text = 'Relay unreachable · retrying';
     else if (state === 'active') text = `${c.label} · telemetry link active`;
     else if (state === 'lost') text = `${c.label} · link lost · last data ${Math.round((Date.now() - c.lastDataAt) / 1000)}s ago`;
-    else if (c.lastSeenTs) text = `${c.label} · no live data · last seen ${new Date(c.lastSeenTs).toLocaleString()}`;
+    else if (c.lastSeenTs) text = `${c.label} · no live data · last seen ${istDateTime(c.lastSeenTs)} IST`;
     else text = `${c.label} · waiting for telemetry…`;
     setText('link-text', text);
 
